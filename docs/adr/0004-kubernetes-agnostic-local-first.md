@@ -25,9 +25,11 @@ Rules that follow from this:
    mappings, no cloud load balancer annotations, no assumed CSI driver names.
 2. **Gateway API for ingress**, implemented by Envoy Gateway. It's the portable
    standard. ingress-nginx, the old de-facto default, was retired in March 2026.
-3. **Cluster-specific facts are inputs, not assumptions.** Storage class,
-   whether `LoadBalancer` services get an address, and the base domain are
-   Terraform variables / Helm values with sensible defaults.
+3. **Cluster-specific facts are inputs, not assumptions.** Nothing assumes a
+   `LoadBalancer` gets an address (the Gateway's data plane is `ClusterIP`);
+   storage uses the cluster's default StorageClass; the base domain is
+   `*.localhost`. Each of these becomes a value in exactly one place when a
+   second environment needs a different answer, not before.
 4. **Local-first defaults.** `make up` creates a kind cluster because it's the
    most widely available option. `make platform KUBE_CONTEXT=<ctx>` skips cluster
    creation and installs onto any existing cluster.
