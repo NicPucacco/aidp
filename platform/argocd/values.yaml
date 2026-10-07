@@ -25,6 +25,31 @@ configs:
       end
       return hs
 
+    # Health for platform API objects. Without this, Argo CD reports a
+    # Database "Healthy" the moment it's created, long before Postgres is
+    # accepting connections. One key per kind: ConfigMap keys can't contain
+    # '*', so wildcards would need the legacy single-blob format. New kinds
+    # reuse the same check via the YAML anchor.
+    resource.customizations.health.platform.fernhill.io_Database: &platformApiHealth |
+      hs = { status = "Progressing", message = "Waiting for Ready" }
+      if obj.status ~= nil and obj.status.conditions ~= nil then
+        for _, c in ipairs(obj.status.conditions) do
+          if c.type == "Synced" and c.status == "False" then
+            hs.status = "Degraded"
+            hs.message = c.message or c.reason
+            return hs
+          end
+        end
+        for _, c in ipairs(obj.status.conditions) do
+          if c.type == "Ready" and c.status == "True" then
+            hs.status = "Healthy"
+            hs.message = "Ready"
+            return hs
+          end
+        end
+      end
+      return hs
+
   repositories:
     # Envoy Gateway publishes its chart only as an OCI artifact.
     envoyproxy:

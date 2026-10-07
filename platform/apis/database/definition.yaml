@@ -1,0 +1,71 @@
+# The Database API: what a Fernhill team asks for, in their terms.
+#
+# Teams choose a t-shirt size, not instance counts or storage classes. What
+# "small" means is the platform team's decision, encoded once in compose.py,
+# and can change (or map to RDS in a cloud composition) without touching any
+# tenant's YAML. See ADR-0006.
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: databases.platform.fernhill.io
+spec:
+  scope: Namespaced
+  group: platform.fernhill.io
+  names:
+    kind: Database
+    plural: databases
+    categories: [fernhill]
+  defaultCompositionRef:
+    name: database-cnpg
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      additionalPrinterColumns:
+        - name: Size
+          type: string
+          jsonPath: .spec.size
+        - name: Secret
+          type: string
+          jsonPath: .status.connectionSecret
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                engine:
+                  type: string
+                  description: Database engine. Postgres is the only paved-road engine.
+                  enum: [postgres]
+                  default: postgres
+                version:
+                  type: string
+                  description: Major version.
+                  enum: ["16", "17", "18"]
+                  default: "18"
+                size:
+                  type: string
+                  description: >-
+                    small: 1 instance, 1Gi. medium: 2 instances (HA), 10Gi.
+                    large: 3 instances (HA), 50Gi.
+                  enum: [small, medium, large]
+                  default: small
+                databaseName:
+                  type: string
+                  description: Name of the database created inside the instance.
+                  pattern: "^[a-z][a-z0-9_]{0,62}$"
+                  default: app
+            status:
+              type: object
+              properties:
+                connectionSecret:
+                  type: string
+                  description: >-
+                    Secret in the same namespace with keys host, port, dbname,
+                    user, password, and uri.
+                host:
+                  type: string
+                port:
+                  type: integer

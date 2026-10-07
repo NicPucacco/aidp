@@ -53,6 +53,8 @@ transition adds an interface and some policy, not a second platform.
 | Terraform bootstraps Argo CD, then stops | Exactly one owner per resource; no Terraform/Argo drift fights | [0003](docs/adr/0003-terraform-bootstraps-argo-cd-owns-the-rest.md) |
 | Target the Kubernetes API, not a distribution | Runs on kind, k3d, EKS, GKE… and lets CI test what reviewers run | [0004](docs/adr/0004-kubernetes-agnostic-local-first.md) |
 | Same Kyverno policies in CI and at admission; enforcement is opt-in per namespace | Authors (human or agent) get feedback before review; legacy services aren't broken on day one | [0005](docs/adr/0005-kyverno-policies-run-in-ci-and-at-admission.md) |
+| Databases are requested by t-shirt size; composition logic is unit-tested Python | Tenants state intent, the platform owns what "small" means, and the logic is testable | [0006](docs/adr/0006-database-api-and-python-compositions.md) |
+| Tenant directories may only contain platform API objects; the platform owns namespaces and labels | Small, explicit API surface. Matters most once agents can write to it | [0007](docs/adr/0007-tenant-boundary.md) |
 
 More ADRs are added as each phase lands. Every ADR ends with **"What would
 change my mind"**, because a decision with no exit criteria is just a preference.
@@ -78,8 +80,15 @@ Requirements: Docker (~8 GB memory), kubectl, Terraform, kind. Run `make doctor`
 make up         # kind cluster + Terraform bootstrap, then waits for Argo CD to converge
 make gateway    # Argo CD via the platform Gateway at http://argocd.localhost:8000
 make password   # admin password
-make test       # policy unit tests, then replay the same fixtures against the live cluster
+make test       # API + policy unit tests, then live checks (admission, connect to a real database)
 make down       # tear it all down
+```
+
+Then look at the golden path working: Billing's whole database request is
+[10 lines of YAML](tenants/billing/invoice-api/database.yaml).
+
+```bash
+kubectl -n billing get database        # SIZE small, READY True, SECRET invoice-api-app
 ```
 
 Already have a cluster? Skip kind:

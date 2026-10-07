@@ -1,0 +1,13 @@
+# Crossplane v2 composes ordinary Kubernetes resources directly, but only
+# those it has RBAC for. Aggregating into Crossplane's ClusterRole grants it
+# exactly the resource types our compositions create, and nothing else.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: crossplane-compose-cnpg
+  labels:
+    rbac.crossplane.io/aggregate-to-crossplane: "true"
+rules:
+  - apiGroups: [postgresql.cnpg.io]
+    resources: [clusters]
+    verbs: [get, list, watch, create, update, patch, delete]

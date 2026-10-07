@@ -1,0 +1,74 @@
+# One Argo CD Application per team directory under tenants/. Wave 2: needs
+# the platform APIs (wave 1) to exist.
+#
+# The platform, not the tenant, decides the namespace and its labels: the
+# directory name becomes the namespace, and every tenant namespace is
+# labelled managed=true so the baseline policies apply (ADR-0005).
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: tenants
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  description: Team-owned config. Tenants declare intent through platform APIs only (ADR-0006).
+  sourceRepos:
+    - {{ .Values.repoURL }}
+  destinations:
+    - server: https://kubernetes.default.svc
+      namespace: "*"
+  # Namespace is the only cluster-scoped kind, and only so Argo CD can create
+  # the team namespace itself.
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+  # The paved road, enforced at the GitOps layer: tenant directories may only
+  # contain platform API objects. Raw Deployments, Roles, etc. are the escape
+  # hatch, and need a platform-reviewed change to this list.
+  namespaceResourceWhitelist:
+    - group: platform.fernhill.io
+      kind: "*"
+---
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tenants
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+    - git:
+        repoURL: {{ .Values.repoURL }}
+        revision: {{ .Values.targetRevision }}
+        directories:
+          - path: tenants/*
+  template:
+    metadata:
+      name: {{`'tenant-{{ .path.basename }}'`}}
+      labels:
+        platform.fernhill.io/tenant: {{`'{{ .path.basename }}'`}}
+    spec:
+      project: tenants
+      source:
+        repoURL: {{ .Values.repoURL }}
+        targetRevision: {{ .Values.targetRevision }}
+        path: {{`'{{ .path.path }}'`}}
+        directory:
+          recurse: true
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: {{`'{{ .path.basename }}'`}}
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+          - CreateNamespace=true
+        managedNamespaceMetadata:
+          labels:
+            platform.fernhill.io/managed: "true"
+            platform.fernhill.io/owner: {{`'{{ .path.basename }}'`}}

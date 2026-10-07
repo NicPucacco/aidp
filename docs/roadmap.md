@@ -8,9 +8,9 @@ platform's own changes go through the same contract it offers everyone else.
 | Tag | Phase | Fernhill problem it moves | Status |
 |---|---|---|---|
 | `v0-foundations` | Story, ADRs, repo layout, Terraform bootstrap, CI skeleton | — (groundwork) | ✅ done |
-| `v1-gitops-core` | Argo CD app-of-apps, Crossplane, Kyverno baseline, Gateway API | #2 one paved road | 🚧 in review |
-| `v2-database-path` | `Database` API (Crossplane XRD + Python composition function → CloudNativePG) | #1 five-day databases | ⏳ planned |
-| `v3-service-path` | `Service` API, shared Helm chart, ApplicationSet over `tenants/*`, DB binding | #2 one paved road | ⏳ planned |
+| `v1-gitops-core` | Argo CD app-of-apps, Crossplane, Kyverno baseline, Gateway API | #2 one paved road | ✅ done |
+| `v2-database-path` | `Database` API (Crossplane XRD + tested Python composition → CloudNativePG), tenant ApplicationSet + boundary | #1 five-day databases | 🚧 in review |
+| `v3-service-path` | `Service` API, Gateway route, binding a service to its `Database` | #2 one paved road | ⏳ planned |
 | `v4-portal` | Backstage catalog + golden-path templates; image built in GitHub Actions | #1, #2 (discoverability) | ⏳ planned |
 | `v5-agentic` | Python MCP server, PR-only GitHub App identity, agent-specific policy | #3 agents as accountable users | ⏳ planned |
 | `v6-proof` | A real agent-authored PR merged in this repo, demo recording, success metrics | all three | ⏳ planned |
@@ -27,10 +27,18 @@ platform's own changes go through the same contract it offers everyone else.
   the PR-based contract from v1–v4 is sound, agents need a new *interface*, not
   a new *platform*. See [ADR-0001](adr/0001-the-pull-request-is-the-platform-api.md).
 
+### Changes to the plan
+
+- **v2 pulled the tenant ApplicationSet forward from v3.** A database nobody
+  can request through Git doesn't prove anything, and the tenant boundary
+  ([ADR-0007](adr/0007-tenant-boundary.md)) needed deciding before the first
+  tenant existed, not after.
+
 ## Explicitly out of scope
 
 - **Multi-cluster / fleet management.** Real, but orthogonal to the story.
-- **Production cloud compositions.** An AWS RDS composition is sketched to show
-  the abstraction holds, but only the local composition is exercised.
+- **Production cloud compositions.** The `Database` API is designed so an RDS
+  composition can sit behind it ([ADR-0006](adr/0006-database-api-and-python-compositions.md)),
+  but only the local CloudNativePG composition is built and exercised.
 - **Secrets management beyond Kubernetes Secrets.** In production this would be
   External Secrets Operator + a vault; called out in the relevant ADR.

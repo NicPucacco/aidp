@@ -1,0 +1,4 @@
+# Pinned to what function-python v0.6.0 ships, so tests exercise the same SDK
+# the cluster runs. Bump together with the Function version in functions.yaml.
+crossplane-function-sdk-python==0.15.1
+pytest==8.4.2

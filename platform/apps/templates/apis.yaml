@@ -1,0 +1,26 @@
+# Platform APIs: XRDs, compositions, functions. Wave 1 waits for Crossplane
+# and CloudNativePG (wave 0). Only YAML is synced; compose.py and tests are
+# source/test files that Argo CD ignores.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: apis
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: {{ .Values.repoURL }}
+    targetRevision: {{ .Values.targetRevision }}
+    path: platform/apis
+    directory:
+      recurse: true
+  destination:
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

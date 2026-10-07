@@ -68,7 +68,17 @@ lint: ## Run the same static checks as CI
 	yamllint -s .
 	helm lint platform/apps
 
+.PHONY: generate
+generate: ## Regenerate compositions from their compose.py
+	scripts/gen-compositions.py
+
+.PHONY: test-apis
+test-apis: ## Unit-test composition functions (needs: pip install -r platform/apis/requirements-dev.txt)
+	scripts/gen-compositions.py --check
+	pytest -q platform/apis
+
 .PHONY: test
-test: ## Run policy unit tests, then replay the fixtures against the live cluster
+test: test-apis ## All tests: API unit tests, policy tests, then live-cluster checks
 	kyverno test platform/policies/tests --detailed-results
 	KUBE_CONTEXT=$(KUBE_CONTEXT) scripts/e2e-admission.sh
+	KUBE_CONTEXT=$(KUBE_CONTEXT) scripts/e2e-database.sh
