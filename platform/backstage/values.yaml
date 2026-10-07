@@ -7,7 +7,7 @@ image:
   # Content-addressed: the git tree hash of portal/ (`git rev-parse HEAD:portal`).
   # CI fails if this doesn't match, and publishes exactly this tag on merge,
   # so a checked-out tag always runs the portal code it contains (ADR-0011).
-  tag: "0000000000000000000000000000000000000000"
+  tag: "9020831c7cfa5ab0045fb735ce57df84d389dc37"
 
 baseUrl: http://backstage.localhost:8000
 
