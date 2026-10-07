@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry-port-no-tag
+  namespace: billing
+  labels:
+    app.kubernetes.io/name: registry-port-no-tag
+    platform.fernhill.io/owner: billing
+spec:
+  selector:
+    matchLabels: {app: registry-port-no-tag}
+  template:
+    metadata:
+      labels: {app: registry-port-no-tag}
+    spec:
+      containers:
+        - name: app
+          image: registry.internal:5000/invoice-api
+          readinessProbe:
+            httpGet: {path: /healthz, port: 8080}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 128Mi}

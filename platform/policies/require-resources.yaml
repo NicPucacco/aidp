@@ -1,0 +1,38 @@
+# Requests make scheduling honest; a memory limit stops one leak from taking
+# down a node. CPU limits are deliberately NOT required: they cause throttling
+# under burst with little benefit when requests are set correctly.
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: require-resources
+  annotations:
+    policies.kyverno.io/title: Require resource requests and memory limits
+    policies.kyverno.io/category: Fernhill baseline
+spec:
+  validationActions: [Deny]
+  matchConstraints:
+    namespaceSelector:
+      matchLabels:
+        platform.fernhill.io/managed: "true"
+    resourceRules:
+      - apiGroups: [apps]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [deployments, statefulsets]
+  variables:
+    - name: containers
+      expression: >-
+        object.spec.template.spec.containers +
+        object.spec.template.spec.?initContainers.orValue([])
+  validations:
+    - expression: >-
+        variables.containers.all(c,
+          has(c.resources) &&
+          has(c.resources.requests) &&
+          'cpu' in c.resources.requests &&
+          'memory' in c.resources.requests &&
+          has(c.resources.limits) &&
+          'memory' in c.resources.limits)
+      message: >-
+        Every container needs resources.requests.cpu, resources.requests.memory
+        and resources.limits.memory.

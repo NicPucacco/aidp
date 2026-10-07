@@ -1,0 +1,43 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kyverno
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://kyverno.github.io/kyverno/
+    chart: kyverno
+    targetRevision: {{ .Values.versions.kyverno }}
+    helm:
+      releaseName: kyverno
+      valuesObject:
+        # Single replicas are fine for a local cluster; production would run
+        # 3 admission controller replicas behind a PodDisruptionBudget, since
+        # a down admission webhook with failurePolicy=Fail blocks deploys.
+        admissionController:
+          replicas: 1
+        # The kyverno-api subchart renders `labels: {}` / `annotations: {}`
+        # on the policies.kyverno.io CRDs. Server-side apply never stores
+        # empty maps, so Argo CD sees a permanent diff. Giving them real
+        # values fixes it at the source instead of hiding it with
+        # ignoreDifferences.
+        kyverno-api:
+          labels:
+            platform.fernhill.io/component: kyverno
+          annotations:
+            platform.fernhill.io/owner: platform
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kyverno
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

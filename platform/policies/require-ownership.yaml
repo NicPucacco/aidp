@@ -1,0 +1,32 @@
+# At 3am, on-call needs to know who owns a workload from the workload itself,
+# not from Slack history (story, problem #2).
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: require-ownership
+  annotations:
+    policies.kyverno.io/title: Require ownership labels
+    policies.kyverno.io/category: Fernhill baseline
+    policies.kyverno.io/description: >-
+      Workloads in platform-managed namespaces must say what they are and which
+      team owns them.
+spec:
+  validationActions: [Deny]
+  matchConstraints:
+    namespaceSelector:
+      matchLabels:
+        platform.fernhill.io/managed: "true"
+    resourceRules:
+      - apiGroups: [apps]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [deployments, statefulsets]
+  validations:
+    - expression: >-
+        has(object.metadata.labels) &&
+        'app.kubernetes.io/name' in object.metadata.labels &&
+        'platform.fernhill.io/owner' in object.metadata.labels &&
+        object.metadata.labels['platform.fernhill.io/owner'] != ''
+      messageExpression: >-
+        object.kind + ' ' + object.metadata.name + ' must have labels
+        app.kubernetes.io/name and platform.fernhill.io/owner (the owning team)'

@@ -22,7 +22,13 @@ resource "helm_release" "argocd" {
   wait             = true
   timeout          = 600
 
-  values = [file("${path.module}/values/argocd.yaml")]
+  values = [file("${path.module}/../../platform/argocd/values.yaml")]
+
+  # Day 0 only. From v1 the platform/apps tree manages Argo CD's chart version
+  # and values, so a later `terraform apply` must not fight it (ADR-0003).
+  lifecycle {
+    ignore_changes = [version, values]
+  }
 }
 
 # The root Application is wrapped in the argocd-apps chart rather than a
@@ -45,7 +51,14 @@ resource "helm_release" "root_app" {
           repoURL        = var.repo_url
           targetRevision = var.target_revision
           path           = "platform/apps"
-          directory      = { recurse = true }
+          # Child apps track the same repo and revision as the root, so a
+          # PR's CI run tests the PR's whole tree, not main's children.
+          helm = {
+            valuesObject = {
+              repoURL        = var.repo_url
+              targetRevision = var.target_revision
+            }
+          }
         }
         destination = {
           server    = "https://kubernetes.default.svc"

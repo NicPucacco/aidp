@@ -1,0 +1,15 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: noncompliant
+  namespace: billing
+spec:
+  selector:
+    matchLabels: {app: noncompliant}
+  template:
+    metadata:
+      labels: {app: noncompliant}
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/fernhill/invoice-api:latest

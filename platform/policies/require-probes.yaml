@@ -1,0 +1,24 @@
+# Without a readiness probe, a rolling update sends traffic to pods that
+# haven't finished starting.
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: require-probes
+  annotations:
+    policies.kyverno.io/title: Require readiness probes
+    policies.kyverno.io/category: Fernhill baseline
+spec:
+  validationActions: [Deny]
+  matchConstraints:
+    namespaceSelector:
+      matchLabels:
+        platform.fernhill.io/managed: "true"
+    resourceRules:
+      - apiGroups: [apps]
+        apiVersions: [v1]
+        operations: [CREATE, UPDATE]
+        resources: [deployments]
+  validations:
+    - expression: >-
+        object.spec.template.spec.containers.all(c, has(c.readinessProbe))
+      message: Every container in a Deployment needs a readinessProbe.
