@@ -25,6 +25,25 @@ spec:
         fsGroup: 1000
         seccompProfile:
           type: RuntimeDefault
+      # CloudNativePG publishes the connection Secret before Postgres accepts
+      # connections. Backstage started in that gap fails every plugin, keeps
+      # answering liveness, and never becomes ready, so wait for the port.
+      initContainers:
+        - name: wait-for-db
+          image: {{ .Values.waitImage }}
+          command: [sh, -c, 'until nc -z "$PGHOST" "$PGPORT"; do echo waiting for $PGHOST:$PGPORT; sleep 2; done']
+          env:
+            - name: PGHOST
+              valueFrom: {secretKeyRef: {name: backstage-app, key: host}}
+            - name: PGPORT
+              valueFrom: {secretKeyRef: {name: backstage-app, key: port}}
+          resources:
+            requests: {cpu: 10m, memory: 8Mi}
+            limits: {memory: 32Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
       containers:
         - name: backstage
           image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
@@ -54,12 +73,19 @@ spec:
           resources:
             requests: {cpu: 250m, memory: 512Mi}
             limits: {memory: 1Gi}
+          # Backstage's liveness endpoint stays 200 even when startup has
+          # failed, so liveness alone never restarts a wedged backend. The
+          # startup probe uses readiness: not ready within ~5 minutes for any
+          # reason means restart.
+          startupProbe:
+            httpGet: {path: /.backstage/health/v1/readiness, port: http}
+            periodSeconds: 10
+            failureThreshold: 30
           readinessProbe:
             httpGet: {path: /.backstage/health/v1/readiness, port: http}
             periodSeconds: 10
           livenessProbe:
             httpGet: {path: /.backstage/health/v1/liveness, port: http}
-            initialDelaySeconds: 60
             periodSeconds: 20
           securityContext:
             allowPrivilegeEscalation: false
