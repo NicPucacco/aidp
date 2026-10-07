@@ -18,7 +18,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3 g++ bui
 USER node
 WORKDIR /app
 COPY --from=packages --chown=node:node /app .
-RUN --mount=type=cache,target=/home/node/.yarn/berry/cache,sharing=locked,uid=1000,gid=1000 \
+RUN --mount=type=cache,target=/home/node/.yarn/berry,sharing=locked,uid=1000,gid=1000 \
     yarn install --immutable
 COPY --chown=node:node . .
 RUN yarn tsc && yarn --cwd packages/backend build
@@ -35,7 +35,7 @@ WORKDIR /app
 COPY --from=build --chown=node:node /app/.yarn ./.yarn
 COPY --from=build --chown=node:node /app/.yarnrc.yml /app/backstage.json /app/yarn.lock /app/package.json ./
 COPY --from=build --chown=node:node /app/dist/skeleton/ ./
-RUN --mount=type=cache,target=/home/node/.yarn/berry/cache,sharing=locked,uid=1000,gid=1000 \
+RUN --mount=type=cache,target=/home/node/.yarn/berry,sharing=locked,uid=1000,gid=1000 \
     yarn workspaces focus --all --production
 
 # 4. Runtime: no compilers, non-root, read-only root filesystem friendly.
