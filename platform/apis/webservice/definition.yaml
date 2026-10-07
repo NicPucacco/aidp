@@ -1,0 +1,103 @@
+# The WebService API: a long-running HTTP service on the paved road.
+#
+# Named WebService, not Service (collides with core Service/svc) or App
+# (collides with Argo CD's app/apps short names). See ADR-0008.
+apiVersion: apiextensions.crossplane.io/v2
+kind: CompositeResourceDefinition
+metadata:
+  name: webservices.platform.fernhill.io
+  annotations:
+    # An API is never removed as a side effect of a sync or of deleting the
+    # Argo CD app: Crossplane stops reconciling XRs once their XRD goes, which
+    # strands every instance (and, for Database, its data). Removal is a
+    # deliberate step once no instances remain. See ADR-0008.
+    argocd.argoproj.io/sync-options: Prune=false,Delete=false
+spec:
+  scope: Namespaced
+  group: platform.fernhill.io
+  names:
+    kind: WebService
+    plural: webservices
+    categories: [fernhill]
+  defaultCompositionRef:
+    name: webservice-kubernetes
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      additionalPrinterColumns:
+        - name: Image
+          type: string
+          jsonPath: .spec.image
+        - name: URL
+          type: string
+          jsonPath: .status.url
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  description: Container image, pinned to a tag or digest.
+                  # Same rule as the require-pinned-images policy, enforced
+                  # earlier: the API server rejects it before anything is composed.
+                  pattern: "^.+(:[^/:@]+|@sha256:[a-f0-9]{64})$"
+                  x-kubernetes-validations:
+                    - rule: "!self.endsWith(':latest')"
+                      message: "The 'latest' tag isn't allowed; pin a version."
+                port:
+                  type: integer
+                  description: Port the container listens on.
+                  minimum: 1024
+                  maximum: 65535
+                  default: 8080
+                size:
+                  type: string
+                  description: >-
+                    Per-replica resources. small: 100m/256Mi. medium:
+                    250m/512Mi. large: 1 CPU/2Gi.
+                  enum: [small, medium, large]
+                  default: small
+                replicas:
+                  type: integer
+                  minimum: 1
+                  maximum: 10
+                  default: 2
+                healthPath:
+                  type: string
+                  description: HTTP path used for readiness and liveness probes.
+                  pattern: "^/"
+                  default: /healthz
+                expose:
+                  type: boolean
+                  description: Route traffic from the platform Gateway at <name>.<team>.localhost.
+                  default: false
+                database:
+                  type: string
+                  description: >-
+                    Name of a Database in the same namespace. Its credentials
+                    are injected as DATABASE_URL and the standard PG* variables.
+                env:
+                  type: array
+                  description: Plain (non-secret) environment variables.
+                  maxItems: 20
+                  items:
+                    type: object
+                    required: [name, value]
+                    properties:
+                      name:
+                        type: string
+                        pattern: "^[A-Z_][A-Z0-9_]*$"
+                      value:
+                        type: string
+            status:
+              type: object
+              properties:
+                url:
+                  type: string
+                databaseSecret:
+                  type: string

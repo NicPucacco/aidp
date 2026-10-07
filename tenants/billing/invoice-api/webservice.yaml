@@ -1,0 +1,16 @@
+# Billing's invoice API. The image is a stand-in (podinfo) so the repo runs
+# without building anything; everything else is what a real team would write.
+apiVersion: platform.fernhill.io/v1alpha1
+kind: WebService
+metadata:
+  name: invoice-api
+spec:
+  image: ghcr.io/stefanprodan/podinfo:6.15.0
+  port: 9898
+  healthPath: /readyz
+  replicas: 2
+  expose: true
+  database: invoice-api
+  env:
+    - name: PODINFO_UI_MESSAGE
+      value: Fernhill Billing - invoice-api

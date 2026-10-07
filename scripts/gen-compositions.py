@@ -18,6 +18,7 @@ APIS = ROOT / "platform" / "apis"
 # One entry per API: directory -> (composition name, XR kind).
 COMPOSITIONS = {
     "database": ("database-cnpg", "Database"),
+    "webservice": ("webservice-kubernetes", "WebService"),
 }
 
 TEMPLATE = """\

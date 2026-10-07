@@ -51,10 +51,10 @@ allows `platform.fernhill.io/*` kinds and nothing else namespaced. A raw
 - **The allow-list is cluster-wide per project.** Every team gets the same
   kinds. Per-team exceptions would need separate AppProjects, which isn't
   worth the complexity until a real exception shows up.
-- **Known gap:** the project allows any destination namespace, so a tenant
-  file with an explicit `metadata.namespace: other-team` would be applied there.
-  A CI check that tenant files never set `metadata.namespace` closes this. That's
-  tracked for v5, where it becomes part of the agent guardrails.
+- **Gap, closed in v3:** the project allows any destination namespace, so a
+  tenant file with an explicit `metadata.namespace: other-team` would be
+  applied there. `scripts/check-tenants.py` now rejects any tenant file that
+  sets `metadata.namespace` ([ADR-0009](0009-render-and-check-tenant-config-before-review.md)).
 
 ## What would change my mind
 

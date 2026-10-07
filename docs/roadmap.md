@@ -9,8 +9,8 @@ platform's own changes go through the same contract it offers everyone else.
 |---|---|---|---|
 | `v0-foundations` | Story, ADRs, repo layout, Terraform bootstrap, CI skeleton | — (groundwork) | ✅ done |
 | `v1-gitops-core` | Argo CD app-of-apps, Crossplane, Kyverno baseline, Gateway API | #2 one paved road | ✅ done |
-| `v2-database-path` | `Database` API (Crossplane XRD + tested Python composition → CloudNativePG), tenant ApplicationSet + boundary | #1 five-day databases | 🚧 in review |
-| `v3-service-path` | `Service` API, Gateway route, binding a service to its `Database` | #2 one paved road | ⏳ planned |
+| `v2-database-path` | `Database` API (Crossplane XRD + tested Python composition → CloudNativePG), tenant ApplicationSet + boundary | #1 five-day databases | ✅ done |
+| `v3-service-path` | `WebService` API, Gateway route, Database binding, tenant render + policy gate in CI | #2 one paved road | 🚧 in review |
 | `v4-portal` | Backstage catalog + golden-path templates; image built in GitHub Actions | #1, #2 (discoverability) | ⏳ planned |
 | `v5-agentic` | Python MCP server, PR-only GitHub App identity, agent-specific policy | #3 agents as accountable users | ⏳ planned |
 | `v6-proof` | A real agent-authored PR merged in this repo, demo recording, success metrics | all three | ⏳ planned |
@@ -33,6 +33,11 @@ platform's own changes go through the same contract it offers everyone else.
   can request through Git doesn't prove anything, and the tenant boundary
   ([ADR-0007](adr/0007-tenant-boundary.md)) needed deciding before the first
   tenant existed, not after.
+
+- **The `Service` API became `WebService`** to avoid kubectl name collisions,
+  and v3 added a CI gate that renders tenant config through the real
+  compositions ([ADR-0009](adr/0009-render-and-check-tenant-config-before-review.md)).
+  It was planned for v5, but every tenant PR benefits, not just agent PRs.
 
 ## Explicitly out of scope
 
