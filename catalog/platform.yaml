@@ -12,40 +12,6 @@ spec:
   owner: group:platform
 ---
 apiVersion: backstage.io/v1alpha1
-kind: API
-metadata:
-  name: webservice-api
-  title: WebService API
-  description: Run a long-running HTTP service on the paved road (ADR-0008).
-  links:
-    - url: https://github.com/NicPucacco/aidp/blob/main/docs/adr/0008-webservice-api.md
-      title: ADR-0008
-spec:
-  type: crossplane-xrd
-  lifecycle: experimental
-  owner: group:platform
-  system: fernhill-platform
-  definition:
-    $text: ../platform/apis/webservice/definition.yaml
----
-apiVersion: backstage.io/v1alpha1
-kind: API
-metadata:
-  name: database-api
-  title: Database API
-  description: A t-shirt-sized Postgres database (ADR-0006).
-  links:
-    - url: https://github.com/NicPucacco/aidp/blob/main/docs/adr/0006-database-api-and-python-compositions.md
-      title: ADR-0006
-spec:
-  type: crossplane-xrd
-  lifecycle: experimental
-  owner: group:platform
-  system: fernhill-platform
-  definition:
-    $text: ../platform/apis/database/definition.yaml
----
-apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: developer-portal

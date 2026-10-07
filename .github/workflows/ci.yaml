@@ -194,7 +194,9 @@ jobs:
           kubectl get pods -A || true
           kubectl get databases.platform.fernhill.io,webservices.platform.fernhill.io,clusters.postgresql.cnpg.io -A -o wide || true
           kubectl get functions.pkg.crossplane.io,compositions,xrd || true
-          kubectl -n backstage logs deploy/backstage --all-containers --prefix --tail=60 || true
+          kubectl -n backstage logs deploy/backstage -c backstage --tail=2000 \
+            | grep -v -E 'incomingRequest|baseUrl is set to a localhost' | tail -80 || true
+          kubectl -n backstage logs deploy/backstage -c git-sync --tail=20 || true
           kubectl get events -A --sort-by=.lastTimestamp | tail -50 || true
 
   # Merges to main publish the portal image under its content hash, so every
