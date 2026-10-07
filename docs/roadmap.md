@@ -10,8 +10,8 @@ platform's own changes go through the same contract it offers everyone else.
 | `v0-foundations` | Story, ADRs, repo layout, Terraform bootstrap, CI skeleton | — (groundwork) | ✅ done |
 | `v1-gitops-core` | Argo CD app-of-apps, Crossplane, Kyverno baseline, Gateway API | #2 one paved road | ✅ done |
 | `v2-database-path` | `Database` API (Crossplane XRD + tested Python composition → CloudNativePG), tenant ApplicationSet + boundary | #1 five-day databases | ✅ done |
-| `v3-service-path` | `WebService` API, Gateway route, Database binding, tenant render + policy gate in CI | #2 one paved road | 🚧 in review |
-| `v4-portal` | Backstage catalog + golden-path templates; image built in GitHub Actions | #1, #2 (discoverability) | ⏳ planned |
+| `v3-service-path` | `WebService` API, Gateway route, Database binding, tenant render + policy gate in CI | #2 one paved road | ✅ done |
+| `v4-portal` | Backstage reading Git via git-sync, golden-path templates that open PRs, content-addressed image built in CI | #1, #2 (discoverability) | 🚧 in review |
 | `v5-agentic` | Python MCP server, PR-only GitHub App identity, agent-specific policy | #3 agents as accountable users | ⏳ planned |
 | `v6-proof` | A real agent-authored PR merged in this repo, demo recording, success metrics | all three | ⏳ planned |
 

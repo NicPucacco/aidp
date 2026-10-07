@@ -41,10 +41,21 @@ ui: ## Port-forward the Argo CD UI to http://localhost:8080
 	kubectl --context $(KUBE_CONTEXT) -n argocd port-forward svc/argocd-server 8080:80
 
 .PHONY: gateway
-gateway: ## Port-forward the platform Gateway; then open http://argocd.localhost:8000
+gateway: ## Port-forward the Gateway: http://backstage.localhost:8000, http://argocd.localhost:8000
 	kubectl --context $(KUBE_CONTEXT) -n envoy-gateway-system port-forward \
 		$$(kubectl --context $(KUBE_CONTEXT) -n envoy-gateway-system get svc \
 			-l gateway.envoyproxy.io/owning-gateway-name=platform -o name) 8000:80
+
+.PHONY: portal-image
+portal-image: ## Build the portal image for the committed portal/ tree and load it into kind
+	CLUSTER=$(CLUSTER_NAME) scripts/portal-image.sh build
+
+.PHONY: portal-token
+portal-token: ## Let golden-path templates open real PRs (uses GITHUB_TOKEN or your gh login)
+	@token=$${GITHUB_TOKEN:-$$(gh auth token)}; \
+	kubectl --context $(KUBE_CONTEXT) -n backstage create secret generic backstage-github \
+		--from-literal=token="$$token" --dry-run=client -o yaml | kubectl --context $(KUBE_CONTEXT) apply -f -; \
+	kubectl --context $(KUBE_CONTEXT) -n backstage rollout restart deploy/backstage
 
 .PHONY: password
 password: ## Print the initial Argo CD admin password
@@ -81,8 +92,12 @@ test-apis: ## Unit-test composition functions (needs: pip install -r platform/ap
 check-tenants: ## Render tenant config through real compositions and evaluate policies
 	scripts/check-tenants.py
 
+.PHONY: test-templates
+test-templates: ## Render golden-path templates and run the output through the tenant gate
+	scripts/test-templates.py
+
 .PHONY: test
-test: test-apis check-tenants ## All tests: unit, tenant render+policy, then live-cluster checks
+test: test-apis check-tenants test-templates ## All tests: unit, tenant render+policy, then live-cluster checks
 	kyverno test platform/policies/tests --detailed-results
 	KUBE_CONTEXT=$(KUBE_CONTEXT) scripts/e2e-admission.sh
 	KUBE_CONTEXT=$(KUBE_CONTEXT) scripts/e2e-database.sh

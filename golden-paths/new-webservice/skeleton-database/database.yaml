@@ -1,0 +1,7 @@
+apiVersion: platform.fernhill.io/v1alpha1
+kind: Database
+metadata:
+  name: ${{ values.name }}
+spec:
+  size: ${{ values.size }}
+  databaseName: ${{ values.databaseName }}

@@ -1,0 +1,9 @@
+# The portal's Postgres, requested through the same Database API tenants use.
+apiVersion: platform.fernhill.io/v1alpha1
+kind: Database
+metadata:
+  name: backstage
+  namespace: backstage
+spec:
+  size: small
+  databaseName: backstage

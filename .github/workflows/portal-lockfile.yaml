@@ -1,0 +1,36 @@
+# TEMPORARY: generates portal/yarn.lock on a fast network. Docker Desktop on
+# the dev machine timed out resolving ~3,000 packages. Deleted once the
+# lockfile is committed.
+name: portal-lockfile
+
+on:
+  push:
+    branches: [phase/v4-portal]
+    paths:
+      - portal/package.json
+      - portal/packages/*/package.json
+      - .github/workflows/portal-lockfile.yaml
+
+permissions:
+  contents: read
+
+jobs:
+  lockfile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Resolve dependencies
+        working-directory: portal
+        run: |
+          corepack enable
+          yarn install --mode=update-lockfile
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: portal-yarn-lock
+          path: portal/yarn.lock

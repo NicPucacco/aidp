@@ -1,0 +1,29 @@
+# Backstage entities for this service. Not a Kubernetes object: Argo CD
+# excludes catalog-info.yaml from tenant sync, and check-tenants.py skips it.
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: invoice-api
+  description: Generates and stores customer invoices.
+  annotations:
+    backstage.io/kubernetes-label-selector: app.kubernetes.io/name=invoice-api
+    backstage.io/kubernetes-namespace: billing
+  links:
+    - url: http://invoice-api.billing.localhost:8000
+      title: Service (via make gateway)
+spec:
+  type: service
+  lifecycle: production
+  owner: group:billing
+  consumesApis: [webservice-api]
+  dependsOn: [resource:invoice-api-db]
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: invoice-api-db
+  description: Postgres for invoice-api (Database API, size small).
+spec:
+  type: database
+  owner: group:billing
+  dependsOn: [api:database-api]

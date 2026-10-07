@@ -58,6 +58,7 @@ transition adds an interface and some policy, not a second platform.
 | Probes, limits, non-root, PDBs, routing: decided once in the WebService composition | 14 services stop being deployed 14 ways; compliant by construction | [0008](docs/adr/0008-webservice-api.md) |
 | Tenant PRs are rendered through real compositions and policy-checked in CI | Reviewers judge intent, not YAML. The gate agent PRs will rely on | [0009](docs/adr/0009-render-and-check-tenant-config-before-review.md) |
 | XRDs are never pruned; breaking API changes go add → migrate → remove | Learned the hard way: a rename deadlocked the platform | [0010](docs/adr/0010-platform-api-lifecycle.md) |
+| The portal reads Git and writes only PRs; its image is tagged by content hash | Discoverability without a second write path; every commit knows its exact portal | [0011](docs/adr/0011-the-portal-is-a-thin-client.md) |
 
 More ADRs are added as each phase lands. Every ADR ends with **"What would
 change my mind"**, because a decision with no exit criteria is just a preference.
@@ -96,6 +97,10 @@ kubectl -n billing get databases,webservices   # both READY True
 make gateway                                   # then open http://invoice-api.billing.localhost:8000
 ```
 
+The portal is at http://backstage.localhost:8000 (also via `make gateway`):
+the catalog, the teams, and the two golden paths. Templates open real PRs
+once you run `make portal-token`. Without it you can still dry-run them.
+
 Already have a cluster? Skip kind:
 
 ```bash
@@ -105,10 +110,13 @@ make platform KUBE_CONTEXT=my-context
 ## Repository map
 
 ```
-bootstrap/    Day 0: Terraform that installs Argo CD on any cluster
-platform/     Platform team: Argo apps, Crossplane APIs, Kyverno policies, charts
-tenants/      Developers + agents: one directory per team and service (PR-only)
-docs/         Story, roadmap, ADRs
+bootstrap/     Day 0: Terraform that installs Argo CD on any cluster
+platform/      Platform team: Argo apps, Crossplane APIs, Kyverno policies, portal deploy
+tenants/       Developers + agents: one directory per team and service (PR-only)
+golden-paths/  Backstage templates: generate tenant files, open a PR
+catalog/       Teams, the platform system, and its APIs, as Backstage entities
+portal/        The Backstage app (built in CI, tagged by content hash)
+docs/          Story, roadmap, ADRs
 .github/      CI, CODEOWNERS
 ```
 
