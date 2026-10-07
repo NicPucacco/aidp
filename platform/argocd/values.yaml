@@ -25,10 +25,12 @@ configs:
       end
       return hs
 
-    # Health for every platform API object (Database, and later Service).
-    # Without this, Argo CD reports a Database "Healthy" the moment it's
-    # created, long before Postgres is accepting connections.
-    resource.customizations.health.platform.fernhill.io_*: |
+    # Health for platform API objects. Without this, Argo CD reports a
+    # Database "Healthy" the moment it's created, long before Postgres is
+    # accepting connections. One key per kind: ConfigMap keys can't contain
+    # '*', so wildcards would need the legacy single-blob format. New kinds
+    # reuse the same check via the YAML anchor.
+    resource.customizations.health.platform.fernhill.io_Database: &platformApiHealth |
       hs = { status = "Progressing", message = "Waiting for Ready" }
       if obj.status ~= nil and obj.status.conditions ~= nil then
         for _, c in ipairs(obj.status.conditions) do
