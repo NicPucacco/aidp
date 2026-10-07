@@ -1,0 +1,9 @@
+# Billing's invoice database. This is the whole request: no ticket, no
+# Terraform, no credentials pasted into a namespace (story, problem #1).
+apiVersion: platform.fernhill.io/v1alpha1
+kind: Database
+metadata:
+  name: invoice-api
+spec:
+  size: small
+  databaseName: invoices

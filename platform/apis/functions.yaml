@@ -1,0 +1,8 @@
+# Composition functions used by platform APIs. Version is pinned and must
+# match the SDK pinned in requirements-dev.txt.
+apiVersion: pkg.crossplane.io/v1
+kind: Function
+metadata:
+  name: function-python
+spec:
+  package: xpkg.crossplane.io/crossplane-contrib/function-python:v0.6.0
