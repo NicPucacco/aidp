@@ -39,6 +39,11 @@ platform's own changes go through the same contract it offers everyone else.
   compositions ([ADR-0009](adr/0009-render-and-check-tenant-config-before-review.md)).
   It was planned for v5, but every tenant PR benefits, not just agent PRs.
 
+- **v4 surfaced a resource ceiling.** The full stack outgrew an 8 GB Docker VM.
+  A slimmer local profile (e.g. Kyverno without background/report
+  controllers, a single shared Postgres) is a candidate follow-up rather
+  than something to quietly tune away.
+
 ## Explicitly out of scope
 
 - **Multi-cluster / fleet management.** Real, but orthogonal to the story.

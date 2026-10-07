@@ -78,7 +78,15 @@ change my mind"**, because a decision with no exit criteria is just a preference
 
 ## Run it
 
-Requirements: Docker (~8 GB memory), kubectl, Terraform, kind. Run `make doctor` to check.
+Requirements: Docker, kubectl, Terraform, kind. Run `make doctor` to check.
+
+**Resources, honestly:** the full platform (Argo CD, Crossplane, Kyverno,
+Envoy Gateway, CloudNativePG, Backstage, and two Postgres instances) is a lot
+of control plane for one node. It converges in about 7 minutes on a GitHub
+Actions runner (4 vCPU, 16 GB), which CI proves on every PR. Plan for
+**4+ CPUs and 12 GB of memory for Docker**. On an 8 GB Docker VM it ran fine
+through v3, then thrashed once the portal was added: API server and etcd
+CPU-bound, controllers losing leader election.
 
 ```bash
 make up         # kind cluster + Terraform bootstrap, then waits for Argo CD to converge

@@ -74,6 +74,16 @@ tenant gate. A golden path can't generate a PR that fails CI.
   *as the token's owner*. In production that's SSO plus per-user GitHub
   identity, so PRs are attributed to the person who clicked. That matters for
   the audit trail (story, compliance constraint).
+- **Startup ordering matters.** CloudNativePG publishes the connection Secret
+  *before* Postgres accepts connections. Backstage started in that gap failed
+  every plugin, but its liveness endpoint stayed 200, so it sat not-ready
+  forever and was never restarted. The fix is a wait-for-db init container,
+  plus a `startupProbe` on the readiness endpoint as a general backstop. Any
+  `WebService` bound to a fresh `Database` faces the same race; a startup
+  probe is a candidate default for the WebService composition.
+- Backstage can't resolve `$text` placeholders relative to *file* locations,
+  so the API entities embed their XRD schema instead. It's generated into
+  `catalog/apis.yaml` by the same generator and drift check as the compositions.
 - The first image publish creates a **private** GHCR package. It has to be made
   public once (a manual step) so people without credentials can pull it.
 
