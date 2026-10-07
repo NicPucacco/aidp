@@ -1,12 +1,14 @@
 # Roadmap
 
 Each phase is a git tag. Check out a tag to see the platform as it was at that
-point, and read the phase notes to see *why* it moved the way it did.
+point. From v1, each phase lands as a pull request, and the PR description is
+the phase write-up: what changed, what broke along the way, and why. The
+platform's own changes go through the same contract it offers everyone else.
 
 | Tag | Phase | Fernhill problem it moves | Status |
 |---|---|---|---|
-| `v0-foundations` | Story, ADRs, repo layout, Terraform bootstrap, CI skeleton | — (groundwork) | 🚧 in progress |
-| `v1-gitops-core` | Argo CD app-of-apps, Crossplane, Kyverno baseline, Gateway API | #2 one paved road | ⏳ planned |
+| `v0-foundations` | Story, ADRs, repo layout, Terraform bootstrap, CI skeleton | — (groundwork) | ✅ done |
+| `v1-gitops-core` | Argo CD app-of-apps, Crossplane, Kyverno baseline, Gateway API | #2 one paved road | 🚧 in review |
 | `v2-database-path` | `Database` API (Crossplane XRD + Python composition function → CloudNativePG) | #1 five-day databases | ⏳ planned |
 | `v3-service-path` | `Service` API, shared Helm chart, ApplicationSet over `tenants/*`, DB binding | #2 one paved road | ⏳ planned |
 | `v4-portal` | Backstage catalog + golden-path templates; image built in GitHub Actions | #1, #2 (discoverability) | ⏳ planned |
