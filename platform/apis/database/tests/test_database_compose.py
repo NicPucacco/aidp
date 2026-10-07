@@ -11,7 +11,7 @@ from crossplane.function import resource
 from crossplane.function.proto.v1 import run_function_pb2 as fnv1
 
 _spec = importlib.util.spec_from_file_location(
-    "compose", pathlib.Path(__file__).parent.parent / "compose.py"
+    "database_compose", pathlib.Path(__file__).parent.parent / "compose.py"
 )
 compose = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(compose)

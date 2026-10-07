@@ -77,8 +77,13 @@ test-apis: ## Unit-test composition functions (needs: pip install -r platform/ap
 	scripts/gen-compositions.py --check
 	pytest -q platform/apis
 
+.PHONY: check-tenants
+check-tenants: ## Render tenant config through real compositions and evaluate policies
+	scripts/check-tenants.py
+
 .PHONY: test
-test: test-apis ## All tests: API unit tests, policy tests, then live-cluster checks
+test: test-apis check-tenants ## All tests: unit, tenant render+policy, then live-cluster checks
 	kyverno test platform/policies/tests --detailed-results
 	KUBE_CONTEXT=$(KUBE_CONTEXT) scripts/e2e-admission.sh
 	KUBE_CONTEXT=$(KUBE_CONTEXT) scripts/e2e-database.sh
+	KUBE_CONTEXT=$(KUBE_CONTEXT) scripts/e2e-app.sh
