@@ -55,6 +55,9 @@ transition adds an interface and some policy, not a second platform.
 | Same Kyverno policies in CI and at admission; enforcement is opt-in per namespace | Authors (human or agent) get feedback before review; legacy services aren't broken on day one | [0005](docs/adr/0005-kyverno-policies-run-in-ci-and-at-admission.md) |
 | Databases are requested by t-shirt size; composition logic is unit-tested Python | Tenants state intent, the platform owns what "small" means, and the logic is testable | [0006](docs/adr/0006-database-api-and-python-compositions.md) |
 | Tenant directories may only contain platform API objects; the platform owns namespaces and labels | Small, explicit API surface. Matters most once agents can write to it | [0007](docs/adr/0007-tenant-boundary.md) |
+| Probes, limits, non-root, PDBs, routing: decided once in the WebService composition | 14 services stop being deployed 14 ways; compliant by construction | [0008](docs/adr/0008-webservice-api.md) |
+| Tenant PRs are rendered through real compositions and policy-checked in CI | Reviewers judge intent, not YAML. The gate agent PRs will rely on | [0009](docs/adr/0009-render-and-check-tenant-config-before-review.md) |
+| XRDs are never pruned; breaking API changes go add → migrate → remove | Learned the hard way: a rename deadlocked the platform | [0010](docs/adr/0010-platform-api-lifecycle.md) |
 
 More ADRs are added as each phase lands. Every ADR ends with **"What would
 change my mind"**, because a decision with no exit criteria is just a preference.
@@ -80,15 +83,17 @@ Requirements: Docker (~8 GB memory), kubectl, Terraform, kind. Run `make doctor`
 make up         # kind cluster + Terraform bootstrap, then waits for Argo CD to converge
 make gateway    # Argo CD via the platform Gateway at http://argocd.localhost:8000
 make password   # admin password
-make test       # API + policy unit tests, then live checks (admission, connect to a real database)
+make test       # unit + tenant render/policy checks, then live checks (admission, database, gateway)
 make down       # tear it all down
 ```
 
-Then look at the golden path working: Billing's whole database request is
-[10 lines of YAML](tenants/billing/invoice-api/database.yaml).
+Then look at the golden paths working. Billing's entire footprint is two
+small files: a [Database](tenants/billing/invoice-api/database.yaml) and a
+[WebService](tenants/billing/invoice-api/webservice.yaml) bound to it.
 
 ```bash
-kubectl -n billing get database        # SIZE small, READY True, SECRET invoice-api-app
+kubectl -n billing get databases,webservices   # both READY True
+make gateway                                   # then open http://invoice-api.billing.localhost:8000
 ```
 
 Already have a cluster? Skip kind:
