@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# End-to-end proof of the App golden path: tenants/billing/invoice-api/app.yaml
+# End-to-end proof of the WebService golden path: tenants/billing/invoice-api/webservice.yaml
 # becomes a running service, reachable through the platform Gateway, with its
 # Database credentials injected.
 set -euo pipefail
@@ -8,8 +8,8 @@ CONTEXT_ARGS=()
 [[ -n "${KUBE_CONTEXT:-}" ]] && CONTEXT_ARGS=(--context "$KUBE_CONTEXT")
 k() { kubectl "${CONTEXT_ARGS[@]}" "$@"; }
 
-echo "Waiting for App billing/invoice-api to be Ready..."
-k -n billing wait app.platform.fernhill.io/invoice-api --for=condition=Ready --timeout=10m
+echo "Waiting for WebService billing/invoice-api to be Ready..."
+k -n billing wait webservice.platform.fernhill.io/invoice-api --for=condition=Ready --timeout=10m
 
 db=$(k -n billing exec deploy/invoice-api -- printenv PGDATABASE)
 [[ "$db" == "invoices" ]] || { echo "PGDATABASE is '${db}', expected 'invoices'" >&2; exit 1; }

@@ -86,4 +86,4 @@ test: test-apis check-tenants ## All tests: unit, tenant render+policy, then liv
 	kyverno test platform/policies/tests --detailed-results
 	KUBE_CONTEXT=$(KUBE_CONTEXT) scripts/e2e-admission.sh
 	KUBE_CONTEXT=$(KUBE_CONTEXT) scripts/e2e-database.sh
-	KUBE_CONTEXT=$(KUBE_CONTEXT) scripts/e2e-app.sh
+	KUBE_CONTEXT=$(KUBE_CONTEXT) scripts/e2e-webservice.sh

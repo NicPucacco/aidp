@@ -49,7 +49,7 @@ configs:
         end
       end
       return hs
-    resource.customizations.health.platform.fernhill.io_App: *platformApiHealth
+    resource.customizations.health.platform.fernhill.io_WebService: *platformApiHealth
 
   repositories:
     # Envoy Gateway publishes its chart only as an OCI artifact.

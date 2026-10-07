@@ -30,7 +30,7 @@ POLICIES = ROOT / "platform" / "policies"
 GROUP = "platform.fernhill.io"
 
 # XR kind -> API directory (holds composition.yaml).
-KINDS = {"Database": "database", "App": "app"}
+KINDS = {"Database": "database", "WebService": "webservice"}
 
 
 def tenant_objects():

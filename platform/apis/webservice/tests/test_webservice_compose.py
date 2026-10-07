@@ -1,4 +1,4 @@
-"""Unit tests for the App composition. Run with: make test-apis."""
+"""Unit tests for the WebService composition. Run with: make test-apis."""
 
 import importlib.util
 import pathlib
@@ -7,7 +7,7 @@ from crossplane.function import resource
 from crossplane.function.proto.v1 import run_function_pb2 as fnv1
 
 _spec = importlib.util.spec_from_file_location(
-    "app_compose", pathlib.Path(__file__).parent.parent / "compose.py"
+    "webservice_compose", pathlib.Path(__file__).parent.parent / "compose.py"
 )
 compose = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(compose)
@@ -22,7 +22,7 @@ def run(spec: dict, observed_deployment: dict | None = None) -> fnv1.RunFunction
                 resource=resource.dict_to_struct(
                     {
                         "apiVersion": "platform.fernhill.io/v1alpha1",
-                        "kind": "App",
+                        "kind": "WebService",
                         "metadata": {"name": "invoice-api", "namespace": "billing"},
                         "spec": {"image": IMAGE, **spec},
                     }

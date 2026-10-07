@@ -1,11 +1,11 @@
-"""Compose a Fernhill App into a Deployment, Service, and optional HTTPRoute.
+"""Compose a Fernhill WebService into a Deployment, Service, and optional HTTPRoute.
 
 This file is the source of truth. scripts/gen-compositions.py embeds it into
 composition.yaml for function-python to run; CI fails if the two drift.
 
 Everything a team would otherwise have to remember (probes, limits, a
 non-root security context, a disruption budget, spreading replicas) is
-decided here once, so every App gets it.
+decided here once, so every WebService gets it.
 """
 
 from crossplane.function import resource

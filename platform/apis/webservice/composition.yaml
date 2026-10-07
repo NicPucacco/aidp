@@ -2,11 +2,11 @@
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
-  name: app-kubernetes
+  name: webservice-kubernetes
 spec:
   compositeTypeRef:
     apiVersion: platform.fernhill.io/v1alpha1
-    kind: App
+    kind: WebService
   mode: Pipeline
   pipeline:
     - step: compose
@@ -16,14 +16,14 @@ spec:
         apiVersion: python.fn.crossplane.io/v1beta1
         kind: Script
         script: |
-          """Compose a Fernhill App into a Deployment, Service, and optional HTTPRoute.
+          """Compose a Fernhill WebService into a Deployment, Service, and optional HTTPRoute.
 
           This file is the source of truth. scripts/gen-compositions.py embeds it into
           composition.yaml for function-python to run; CI fails if the two drift.
 
           Everything a team would otherwise have to remember (probes, limits, a
           non-root security context, a disruption budget, spreading replicas) is
-          decided here once, so every App gets it.
+          decided here once, so every WebService gets it.
           """
 
           from crossplane.function import resource

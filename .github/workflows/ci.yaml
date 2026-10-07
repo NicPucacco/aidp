@@ -135,8 +135,8 @@ jobs:
       - name: Database golden path
         run: scripts/e2e-database.sh
 
-      - name: App golden path
-        run: scripts/e2e-app.sh
+      - name: WebService golden path
+        run: scripts/e2e-webservice.sh
 
       - name: Diagnostics
         if: failure()
@@ -146,6 +146,6 @@ jobs:
             kubectl -n argocd get "$app" -o jsonpath='{.metadata.name}: {.status.sync.status}/{.status.health.status} {.status.conditions}{"\n"}' || true
           done
           kubectl get pods -A || true
-          kubectl get databases.platform.fernhill.io,apps.platform.fernhill.io,clusters.postgresql.cnpg.io -A -o wide || true
+          kubectl get databases.platform.fernhill.io,webservices.platform.fernhill.io,clusters.postgresql.cnpg.io -A -o wide || true
           kubectl get functions.pkg.crossplane.io,compositions,xrd || true
           kubectl get events -A --sort-by=.lastTimestamp | tail -50 || true
