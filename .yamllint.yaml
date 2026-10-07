@@ -12,4 +12,5 @@ rules:
 
 ignore: |
   .terraform/
+  platform/apps/templates/
   node_modules/

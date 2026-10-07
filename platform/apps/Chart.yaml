@@ -1,0 +1,5 @@
+apiVersion: v2
+name: platform-apps
+description: App-of-apps for the Fernhill platform. One Argo CD Application per platform component.
+type: application
+version: 0.1.0

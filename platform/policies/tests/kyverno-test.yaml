@@ -1,0 +1,74 @@
+apiVersion: cli.kyverno.io/v1alpha1
+kind: Test
+metadata:
+  name: fernhill-baseline
+policies:
+  - ../require-ownership.yaml
+  - ../require-resources.yaml
+  - ../require-pinned-images.yaml
+  - ../require-probes.yaml
+# One object per file so scripts/e2e-admission.sh can replay each fixture
+# against the live cluster and expect the same verdict.
+resources:
+  - resources/compliant.yaml
+  - resources/noncompliant.yaml
+  - resources/registry-port-no-tag.yaml
+  - resources/legacy-app.yaml
+variables: values.yaml
+results:
+  - policy: require-ownership
+    isValidatingPolicy: true
+    kind: Deployment
+    resources: [billing/compliant, billing/registry-port-no-tag]
+    result: pass
+  - policy: require-ownership
+    isValidatingPolicy: true
+    kind: Deployment
+    resources: [billing/noncompliant]
+    result: fail
+
+  - policy: require-resources
+    isValidatingPolicy: true
+    kind: Deployment
+    resources: [billing/compliant, billing/registry-port-no-tag]
+    result: pass
+  - policy: require-resources
+    isValidatingPolicy: true
+    kind: Deployment
+    resources: [billing/noncompliant]
+    result: fail
+
+  - policy: require-pinned-images
+    isValidatingPolicy: true
+    kind: Deployment
+    resources: [billing/compliant]
+    result: pass
+  - policy: require-pinned-images
+    isValidatingPolicy: true
+    kind: Deployment
+    resources: [billing/noncompliant, billing/registry-port-no-tag]
+    result: fail
+
+  - policy: require-probes
+    isValidatingPolicy: true
+    kind: Deployment
+    resources: [billing/compliant, billing/registry-port-no-tag]
+    result: pass
+  - policy: require-probes
+    isValidatingPolicy: true
+    kind: Deployment
+    resources: [billing/noncompliant]
+    result: fail
+
+  # Unmanaged namespaces are out of scope: existing services adopt the
+  # baseline when they move onto the paved road, not by surprise (ADR-0005).
+  - policy: require-ownership
+    isValidatingPolicy: true
+    kind: Deployment
+    resources: [legacy/legacy-app]
+    result: skip
+  - policy: require-pinned-images
+    isValidatingPolicy: true
+    kind: Deployment
+    resources: [legacy/legacy-app]
+    result: skip

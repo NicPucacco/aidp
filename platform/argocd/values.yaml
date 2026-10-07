@@ -1,0 +1,40 @@
+# Argo CD values, used twice:
+#   - day 0 by bootstrap/terraform (installs Argo CD)
+#   - day 1+ by platform/apps/templates/argocd.yaml (Argo CD manages itself)
+# Same file both times, so the handoff in ADR-0003 is a no-op diff.
+
+configs:
+  params:
+    # TLS is terminated at the Gateway (or not at all for local port-forward).
+    server.insecure: true
+
+  cm:
+    # Argo CD stopped assessing child Application health by default in 1.8.
+    # Restoring it makes sync waves in the app-of-apps actually wait for a
+    # component (e.g. Kyverno) to be healthy before applying things that need
+    # it (e.g. policies).
+    resource.customizations.health.argoproj.io_Application: |
+      hs = {}
+      hs.status = "Progressing"
+      hs.message = ""
+      if obj.status ~= nil and obj.status.health ~= nil then
+        hs.status = obj.status.health.status
+        if obj.status.health.message ~= nil then
+          hs.message = obj.status.health.message
+        end
+      end
+      return hs
+
+  repositories:
+    # Envoy Gateway publishes its chart only as an OCI artifact.
+    envoyproxy:
+      name: envoyproxy
+      type: helm
+      url: docker.io/envoyproxy
+      enableOCI: "true"
+
+dex:
+  enabled: false
+
+notifications:
+  enabled: false

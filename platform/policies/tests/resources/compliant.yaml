@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: compliant
+  namespace: billing
+  labels:
+    app.kubernetes.io/name: compliant
+    platform.fernhill.io/owner: billing
+spec:
+  selector:
+    matchLabels: {app: compliant}
+  template:
+    metadata:
+      labels: {app: compliant}
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/fernhill/invoice-api:1.4.2
+          readinessProbe:
+            httpGet: {path: /healthz, port: 8080}
+          resources:
+            requests: {cpu: 50m, memory: 64Mi}
+            limits: {memory: 128Mi}

@@ -5,7 +5,11 @@ CLUSTER_NAME ?= aidp
 KUBE_CONTEXT ?= kind-$(CLUSTER_NAME)
 TF_DIR       := bootstrap/terraform
 TF           := terraform -chdir=$(TF_DIR)
-TF_VARS      := -var kube_context=$(KUBE_CONTEXT)
+# Argo CD tracks whatever is checked out: a phase tag if HEAD is exactly on
+# one, otherwise the current branch. It must exist on GitHub (Argo CD pulls
+# from there, not from your working copy).
+TARGET_REVISION ?= $(shell git describe --tags --exact-match 2>/dev/null || git rev-parse --abbrev-ref HEAD)
+TF_VARS      := -var kube_context=$(KUBE_CONTEXT) -var target_revision=$(TARGET_REVISION)
 
 .PHONY: help
 help: ## Show targets
@@ -16,7 +20,7 @@ doctor: ## Check required tools are installed
 	@scripts/doctor.sh
 
 .PHONY: up
-up: doctor cluster platform ## Create a local kind cluster and install the platform
+up: doctor cluster platform wait ## Create a local kind cluster and install the platform
 
 .PHONY: cluster
 cluster: ## Create the local kind cluster (skip this to use your own cluster)
@@ -28,9 +32,19 @@ platform: ## Install the platform onto KUBE_CONTEXT (any conformant cluster)
 	$(TF) init -input=false
 	$(TF) apply -input=false -auto-approve $(TF_VARS)
 
+.PHONY: wait
+wait: ## Wait until every Argo CD application is Synced and Healthy
+	KUBE_CONTEXT=$(KUBE_CONTEXT) scripts/wait-for-platform.sh
+
 .PHONY: ui
 ui: ## Port-forward the Argo CD UI to http://localhost:8080
 	kubectl --context $(KUBE_CONTEXT) -n argocd port-forward svc/argocd-server 8080:80
+
+.PHONY: gateway
+gateway: ## Port-forward the platform Gateway; then open http://argocd.localhost:8000
+	kubectl --context $(KUBE_CONTEXT) -n envoy-gateway-system port-forward \
+		$$(kubectl --context $(KUBE_CONTEXT) -n envoy-gateway-system get svc \
+			-l gateway.envoyproxy.io/owning-gateway-name=platform -o name) 8000:80
 
 .PHONY: password
 password: ## Print the initial Argo CD admin password
@@ -52,3 +66,9 @@ lint: ## Run the same static checks as CI
 	$(TF) init -backend=false -input=false >/dev/null
 	$(TF) validate
 	yamllint -s .
+	helm lint platform/apps
+
+.PHONY: test
+test: ## Run policy unit tests, then replay the fixtures against the live cluster
+	kyverno test platform/policies/tests --detailed-results
+	KUBE_CONTEXT=$(KUBE_CONTEXT) scripts/e2e-admission.sh

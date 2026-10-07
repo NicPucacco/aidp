@@ -1,0 +1,12 @@
+# Set by the root Application (bootstrap/terraform) so every child app tracks
+# the same repo and revision as the root.
+repoURL: https://github.com/NicPucacco/aidp.git
+targetRevision: main
+
+# Pinned upstream chart versions. Upgrading a platform component is a PR that
+# changes one line here.
+versions:
+  argocd: 10.9.6
+  crossplane: 2.4.2
+  kyverno: 3.9.1
+  envoyGateway: 1.9.2
