@@ -37,7 +37,8 @@ platform's own changes go through the same contract it offers everyone else.
 ## Explicitly out of scope
 
 - **Multi-cluster / fleet management.** Real, but orthogonal to the story.
-- **Production cloud compositions.** An AWS RDS composition is sketched to show
-  the abstraction holds, but only the local composition is exercised.
+- **Production cloud compositions.** The `Database` API is designed so an RDS
+  composition can sit behind it ([ADR-0006](adr/0006-database-api-and-python-compositions.md)),
+  but only the local CloudNativePG composition is built and exercised.
 - **Secrets management beyond Kubernetes Secrets.** In production this would be
   External Secrets Operator + a vault; called out in the relevant ADR.

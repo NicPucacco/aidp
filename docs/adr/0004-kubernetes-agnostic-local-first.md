@@ -32,9 +32,9 @@ Rules that follow from this:
    most widely available option. `make platform KUBE_CONTEXT=<ctx>` skips cluster
    creation and installs onto any existing cluster.
 5. **Cloud-specific code lives behind an abstraction boundary.** The `Database`
-   API (v2) has a local composition (CloudNativePG) and a documented cloud
-   composition (RDS). The developer-facing API is identical; only the
-   platform-side composition differs.
+   API (v2) has a local composition (CloudNativePG), and a cloud composition
+   (RDS) would sit behind the same API. The developer-facing API stays
+   identical; only the platform-side composition differs.
 
 ## Alternatives considered
 
