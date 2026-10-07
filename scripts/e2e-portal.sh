@@ -29,7 +29,7 @@ done
 want=(component:invoice-api component:developer-portal group:billing template:new-webservice template:new-database api:webservice-api)
 for _ in $(seq 1 40); do
   have=$(api '/api/catalog/entities?fields=kind,metadata.name' \
-    | python3 -c 'import json,sys; print(" ".join(sorted(f"{e[\"kind\"].lower()}:{e[\"metadata\"][\"name\"]}" for e in json.load(sys.stdin))))')
+    | python3 -c 'import json,sys; print(" ".join(sorted(e["kind"].lower() + ":" + e["metadata"]["name"] for e in json.load(sys.stdin))))' 2>/dev/null || true)
   missing=()
   for w in "${want[@]}"; do [[ " $have " == *" $w "* ]] || missing+=("$w"); done
   (( ${#missing[@]} == 0 )) && break
