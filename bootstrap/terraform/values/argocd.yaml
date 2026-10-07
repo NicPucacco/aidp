@@ -1,0 +1,13 @@
+# Day-0 Argo CD values. Kept deliberately small: from v1 the platform/apps
+# tree manages Argo CD itself, and these values move there.
+
+configs:
+  params:
+    # TLS is terminated at the Gateway (or not at all for local port-forward).
+    server.insecure: true
+
+dex:
+  enabled: false
+
+notifications:
+  enabled: false

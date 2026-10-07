@@ -1,0 +1,7 @@
+# Default local cluster. Nothing in platform/ depends on kind (ADR-0004);
+# use `make platform KUBE_CONTEXT=<ctx>` to install onto any other cluster.
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: aidp
+nodes:
+  - role: control-plane

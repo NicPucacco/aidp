@@ -1,0 +1,19 @@
+# Ownership boundaries for the single repository (ADR-0002).
+# Branch protection requires a CODEOWNER review, so agents can propose
+# changes but never approve them (ADR-0001).
+#
+# In this showcase repo every team is played by one person. At "Fernhill" each
+# line would point at a GitHub team, e.g. @fernhill/platform.
+
+*               @NicPucacco
+
+/bootstrap/     @NicPucacco
+/platform/      @NicPucacco
+/.github/       @NicPucacco
+
+# Tenant directories map to stream-aligned teams.
+/tenants/billing/    @NicPucacco
+/tenants/routing/    @NicPucacco
+/tenants/warehouse/  @NicPucacco
+/tenants/tracking/   @NicPucacco
+/tenants/portal/     @NicPucacco

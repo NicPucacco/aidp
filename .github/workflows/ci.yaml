@@ -1,0 +1,81 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  static:
+    name: Static checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v3
+
+      - name: Terraform fmt
+        run: terraform -chdir=bootstrap/terraform fmt -check -recursive
+
+      - name: Terraform validate
+        run: |
+          terraform -chdir=bootstrap/terraform init -backend=false -input=false
+          terraform -chdir=bootstrap/terraform validate
+
+      - name: yamllint
+        run: pipx run yamllint -s .
+
+      - name: actionlint
+        uses: raven-actions/actionlint@v2
+
+  # The same path a reviewer takes: fresh cluster -> terraform -> Argo CD
+  # converges from Git. If this passes, `make up` works (ADR-0004).
+  e2e:
+    name: Bootstrap on kind
+    runs-on: ubuntu-latest
+    needs: static
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: aidp
+          config: bootstrap/kind/cluster.yaml
+
+      - name: Bootstrap platform
+        env:
+          # Argo CD must fetch a commit that exists on GitHub. For PRs that's
+          # the head commit, not the synthetic merge commit.
+          REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
+          REPO_URL: ${{ github.event.pull_request.head.repo.clone_url || format('{0}/{1}.git', github.server_url, github.repository) }}
+        run: |
+          terraform -chdir=bootstrap/terraform init -input=false
+          terraform -chdir=bootstrap/terraform apply -input=false -auto-approve \
+            -var kube_context=kind-aidp \
+            -var repo_url="$REPO_URL" \
+            -var target_revision="$REVISION"
+
+      - name: Wait for root app to sync
+        run: |
+          kubectl -n argocd wait application/root \
+            --for=jsonpath='{.status.sync.status}'=Synced --timeout=5m
+          kubectl -n argocd wait application/root \
+            --for=jsonpath='{.status.health.status}'=Healthy --timeout=10m
+
+      - name: Diagnostics
+        if: failure()
+        run: |
+          kubectl -n argocd get applications -o wide || true
+          kubectl -n argocd describe application root || true
+          kubectl get pods -A || true
