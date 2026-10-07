@@ -21,6 +21,16 @@ spec:
         # a down admission webhook with failurePolicy=Fail blocks deploys.
         admissionController:
           replicas: 1
+        # The kyverno-api subchart renders `labels: {}` / `annotations: {}`
+        # on the policies.kyverno.io CRDs. Server-side apply never stores
+        # empty maps, so Argo CD sees a permanent diff. Giving them real
+        # values fixes it at the source instead of hiding it with
+        # ignoreDifferences.
+        kyverno-api:
+          labels:
+            platform.fernhill.io/component: kyverno
+          annotations:
+            platform.fernhill.io/owner: platform
   destination:
     server: https://kubernetes.default.svc
     namespace: kyverno
