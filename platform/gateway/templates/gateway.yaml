@@ -1,0 +1,101 @@
+{{- $env := .Values.environment }}
+{{- $tls := $env.tls.enabled }}
+# The platform's single shared ingress point (Gateway API, ADR-0004, ADR-0017).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gateway
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: platform-proxy
+  namespace: envoy-gateway-system
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyService:
+        # Locally ClusterIP (`make gateway` port-forwards); nothing assumes a
+        # LoadBalancer implementation exists (ADR-0004).
+        type: {{ $env.gateway.serviceType }}
+        {{- if eq $env.gateway.serviceType "LoadBalancer" }}
+        annotations:
+          # The static public IP Terraform owns (terraform/aks), so DNS can
+          # point at it before the cluster exists, and it survives a rebuild.
+          {{- with $env.gateway.ipv4 }}
+          service.beta.kubernetes.io/azure-load-balancer-ipv4: {{ . | quote }}
+          {{- end }}
+          {{- with $env.gateway.resourceGroup }}
+          service.beta.kubernetes.io/azure-load-balancer-resource-group: {{ . | quote }}
+          {{- end }}
+          # Azure probes HTTP ports with GET / by default; a TCP probe doesn't
+          # depend on what Envoy answers on "/".
+          service.beta.kubernetes.io/port_80_health-probe_protocol: tcp
+          service.beta.kubernetes.io/port_443_health-probe_protocol: tcp
+        {{- end }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: envoy
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+  parametersRef:
+    group: gateway.envoyproxy.io
+    kind: EnvoyProxy
+    name: platform-proxy
+    namespace: envoy-gateway-system
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: platform
+  namespace: gateway
+spec:
+  gatewayClassName: envoy
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: {{ printf "*.%s" $env.baseDomain | quote }}
+      allowedRoutes:
+        namespaces:
+          {{- if $tls }}
+          # With TLS on, plain HTTP only redirects: only the redirect route in
+          # this namespace may attach, so tenant routes can't end up on :80.
+          from: Same
+          {{- else }}
+          from: All
+          {{- end }}
+    {{- if $tls }}
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: {{ printf "*.%s" $env.baseDomain | quote }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: platform-wildcard-tls
+      allowedRoutes:
+        namespaces:
+          from: All
+    {{- end }}
+{{- if $tls }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: https-redirect
+  namespace: gateway
+spec:
+  parentRefs:
+    - name: platform
+      sectionName: http
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301
+{{- end }}

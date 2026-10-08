@@ -29,7 +29,7 @@ spec:
   port: 9898
   healthPath: /readyz
   replicas: 2
-  expose: true              # -> http://invoice-api.billing.localhost
+  expose: true              # -> https://invoice-api-billing.<domain> (ADR-0017)
   database: invoice-api     # -> DATABASE_URL + PG* from the Database's secret
 ```
 

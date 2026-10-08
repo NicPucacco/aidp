@@ -55,9 +55,9 @@ credentials live in CI yet.
 ## Consequences
 
 - **What's *not* done yet, and what the platform needs before tenants run on AKS:**
-  1. **Ingress:** the Gateway's Envoy service is `ClusterIP` (ADR-0004). On
-     AKS it needs `LoadBalancer`, plus DNS and TLS (cert-manager) in place of
-     `*.localhost`. This needs an environment value in `platform/apps`.
+  1. ~~**Ingress:**~~ done in [ADR-0017](0017-ingress-per-environment.md): static
+     IP, Azure DNS wildcard, and Let's Encrypt via cert-manager, all driven by one
+     environment object from Terraform.
   2. **Database backups:** CloudNativePG to Blob Storage via workload identity,
      or an Azure Database for PostgreSQL composition behind the same `Database`
      API, which the API was designed for (ADR-0006).

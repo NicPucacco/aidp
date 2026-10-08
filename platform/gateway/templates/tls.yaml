@@ -1,0 +1,40 @@
+{{- $env := .Values.environment }}
+{{- if $env.tls.enabled }}
+# One wildcard certificate for every platform and tenant host
+# (*.<baseDomain>), so a new service never waits on certificate issuance.
+# DNS-01 through Azure DNS: required for wildcards, and works before the
+# Gateway is reachable. cert-manager authenticates with workload identity, so
+# there's no DNS credential in the cluster.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt
+spec:
+  acme:
+    server: {{ $env.tls.acmeServer | default "https://acme-v02.api.letsencrypt.org/directory" }}
+    email: {{ required "environment.tls.acmeEmail is required when TLS is enabled" $env.tls.acmeEmail }}
+    privateKeySecretRef:
+      name: letsencrypt-account
+    solvers:
+      - dns01:
+          azureDNS:
+            environment: AzurePublicCloud
+            subscriptionID: {{ required "environment.tls.azureDNS.subscriptionID is required" $env.tls.azureDNS.subscriptionID }}
+            resourceGroupName: {{ required "environment.tls.azureDNS.resourceGroup is required" $env.tls.azureDNS.resourceGroup }}
+            hostedZoneName: {{ required "environment.tls.azureDNS.zone is required" $env.tls.azureDNS.zone }}
+            managedIdentity:
+              clientID: {{ required "environment.tls.azureDNS.clientID is required" $env.tls.azureDNS.clientID }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: platform-wildcard
+  namespace: gateway
+spec:
+  secretName: platform-wildcard-tls
+  dnsNames:
+    - {{ printf "*.%s" $env.baseDomain | quote }}
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
+{{- end }}

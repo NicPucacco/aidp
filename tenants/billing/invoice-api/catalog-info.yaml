@@ -9,7 +9,7 @@ metadata:
     backstage.io/kubernetes-label-selector: app.kubernetes.io/name=invoice-api
     backstage.io/kubernetes-namespace: billing
   links:
-    - url: http://invoice-api.billing.localhost:8000
+    - url: http://invoice-api-billing.localhost:8000
       title: Service (via make gateway)
 spec:
   type: service

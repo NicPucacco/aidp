@@ -38,10 +38,14 @@ jobs:
       - name: yamllint
         run: pipx run yamllint -s .
 
-      - name: Render app-of-apps
+      - name: Render charts (local and AKS environments)
         run: |
-          helm lint platform/apps
+          helm lint platform/apps platform/gateway platform/backstage
+          aks=scripts/fixtures/environment-aks.values.yaml
           helm template platform/apps > /dev/null
+          helm template platform/apps -f "$aks" > /dev/null
+          helm template platform/gateway > /dev/null
+          helm template platform/gateway -f "$aks" > /dev/null
 
       - name: actionlint
         uses: raven-actions/actionlint@v2

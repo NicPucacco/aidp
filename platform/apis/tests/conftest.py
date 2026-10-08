@@ -12,6 +12,7 @@ import pytest
 import yaml
 
 APIS = pathlib.Path(__file__).resolve().parents[1]
+LOCAL_ENV = APIS.parents[1] / "scripts" / "fixtures" / "environment-local.yaml"
 GROUP = "platform.fernhill.io/v1alpha1"
 COMPOSITIONS = {"Database": "database", "WebService": "webservice"}
 
@@ -35,13 +36,23 @@ class Rendered:
 
 @pytest.fixture
 def render(tmp_path):
-    def _render(kind: str, spec: dict, observed: list[dict] | None = None, name: str = "invoice-api") -> Rendered:
+    def _render(
+        kind: str, spec: dict, observed: list[dict] | None = None, name: str = "invoice-api", environment: dict | None = None
+    ) -> Rendered:
         xr = {"apiVersion": GROUP, "kind": kind, "metadata": {"name": name, "namespace": "billing"}, "spec": spec}
         (tmp_path / "xr.yaml").write_text(yaml.safe_dump(xr))
         cmd = [
             "crossplane", "render", str(tmp_path / "xr.yaml"),
             str(APIS / COMPOSITIONS[kind] / "composition.yaml"), str(APIS / "functions.yaml"),
         ]
+        env_file = LOCAL_ENV
+        if environment is not None:
+            env_file = tmp_path / "environment.yaml"
+            env_file.write_text(yaml.safe_dump({
+                "apiVersion": "apiextensions.crossplane.io/v1beta1", "kind": "EnvironmentConfig",
+                "metadata": {"name": "platform"}, "data": environment,
+            }))
+        cmd += ["--required-resources", str(env_file)]
         if observed:
             (tmp_path / "observed.yaml").write_text(yaml.safe_dump_all(observed))
             cmd += ["--observed-resources", str(tmp_path / "observed.yaml")]

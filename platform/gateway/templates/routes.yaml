@@ -1,4 +1,5 @@
-# Routes for platform UIs. Tenant routes are created by the Service API (v3).
+{{- $env := .Values.environment }}
+# Routes for platform UIs. Tenant routes come from the WebService API.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -8,8 +9,11 @@ spec:
   parentRefs:
     - name: platform
       namespace: gateway
+      {{- if $env.tls.enabled }}
+      sectionName: https
+      {{- end }}
   hostnames:
-    - argocd.localhost
+    - {{ printf "argocd.%s" $env.baseDomain | quote }}
   rules:
     - backendRefs:
         - name: argocd-server

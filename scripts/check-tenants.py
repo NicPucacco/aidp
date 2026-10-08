@@ -68,7 +68,8 @@ def render(team, doc, workdir):
     xr_path.write_text(yaml.safe_dump(xr))
     api = APIS / KINDS[doc["kind"]]
     proc = subprocess.run(
-        ["crossplane", "render", str(xr_path), str(api / "composition.yaml"), str(APIS / "functions.yaml")],
+        ["crossplane", "render", str(xr_path), str(api / "composition.yaml"), str(APIS / "functions.yaml"),
+         "--required-resources", str(ROOT / "scripts" / "fixtures" / "environment-local.yaml")],
         capture_output=True,
         text=True,
     )

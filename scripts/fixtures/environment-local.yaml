@@ -1,0 +1,11 @@
+# The local (kind) EnvironmentConfig, as platform/apps/templates/environment.yaml
+# renders it with default values. Used by crossplane render in tests and CI.
+apiVersion: apiextensions.crossplane.io/v1beta1
+kind: EnvironmentConfig
+metadata:
+  name: platform
+data:
+  name: local
+  baseDomain: localhost
+  urlPort: ":8000"
+  scheme: http

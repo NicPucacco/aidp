@@ -1,0 +1,5 @@
+apiVersion: v2
+name: gateway
+description: The platform's shared Gateway, TLS, and platform UI routes, per environment (ADR-0017).
+type: application
+version: 0.1.0

@@ -1,0 +1,20 @@
+# An AKS-shaped environment (the shape terraform/aks outputs as
+# platform_environment). CI renders the charts with it so TLS/LoadBalancer
+# templates are exercised without a real cluster (ADR-0017).
+environment:
+  name: prod
+  baseDomain: platform.fernhill.example
+  urlPort: ""
+  gateway:
+    serviceType: LoadBalancer
+    ipv4: 203.0.113.10
+    resourceGroup: rg-fernhill-prod
+  tls:
+    enabled: true
+    acmeEmail: platform-team@fernhill.example
+    acmeServer: https://acme-v02.api.letsencrypt.org/directory
+    azureDNS:
+      subscriptionID: 00000000-0000-0000-0000-000000000001
+      resourceGroup: rg-fernhill-prod
+      zone: platform.fernhill.example
+      clientID: 00000000-0000-0000-0000-000000000002

@@ -1,0 +1,17 @@
+# Set by platform/apps from its `environment` block. Defaults are local kind.
+environment:
+  name: local
+  baseDomain: localhost
+  gateway:
+    serviceType: ClusterIP
+    ipv4: ""
+    resourceGroup: ""
+  tls:
+    enabled: false
+    acmeEmail: ""
+    acmeServer: https://acme-v02.api.letsencrypt.org/directory
+    azureDNS:
+      subscriptionID: ""
+      resourceGroup: ""
+      zone: ""
+      clientID: ""

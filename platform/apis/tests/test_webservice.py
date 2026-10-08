@@ -61,9 +61,18 @@ def test_expose_adds_route_on_platform_gateway(render):
     out = render("WebService", {"image": IMAGE, "expose": True})
     route = out.one("HTTPRoute")
 
-    assert route["spec"]["hostnames"] == ["invoice-api.billing.localhost"]
+    # Single-label host: one wildcard certificate covers every tenant (ADR-0017).
+    assert route["spec"]["hostnames"] == ["invoice-api-billing.localhost"]
     assert route["spec"]["parentRefs"] == [{"name": "platform", "namespace": "gateway"}]
-    assert out.one("WebService")["status"]["url"] == "http://invoice-api.billing.localhost"
+    assert out.one("WebService")["status"]["url"] == "http://invoice-api-billing.localhost:8000"
+
+
+def test_hostname_and_url_follow_the_environment(render):
+    aks = {"name": "aks", "baseDomain": "platform.fernhill.example", "urlPort": "", "scheme": "https"}
+    out = render("WebService", {"image": IMAGE, "expose": True}, environment=aks)
+
+    assert out.one("HTTPRoute")["spec"]["hostnames"] == ["invoice-api-billing.platform.fernhill.example"]
+    assert out.one("WebService")["status"]["url"] == "https://invoice-api-billing.platform.fernhill.example"
 
 
 def test_database_binding_injects_credentials_from_secret(render):

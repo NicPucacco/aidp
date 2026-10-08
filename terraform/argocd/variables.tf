@@ -32,3 +32,9 @@ variable "argocd_apps_chart_version" {
   type        = string
   default     = "2.0.6"
 }
+
+variable "platform_environment" {
+  description = "Per-cluster settings (domain, Gateway IP, TLS). Null means the local kind defaults in platform/apps/values.yaml; for AKS pass terraform/aks's platform_environment output (make platform-aks)."
+  type        = any
+  default     = null
+}
