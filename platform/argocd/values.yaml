@@ -1,5 +1,5 @@
 # Argo CD values, used twice:
-#   - day 0 by bootstrap/terraform (installs Argo CD)
+#   - day 0 by terraform/argocd (installs Argo CD)
 #   - day 1+ by platform/apps/templates/argocd.yaml (Argo CD manages itself)
 # Same file both times, so the handoff in ADR-0003 is a no-op diff.
 

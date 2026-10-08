@@ -5,6 +5,6 @@ updates:
     schedule:
       interval: weekly
   - package-ecosystem: terraform
-    directory: /bootstrap/terraform
+    directories: [/terraform/argocd, /terraform/aks]
     schedule:
       interval: weekly

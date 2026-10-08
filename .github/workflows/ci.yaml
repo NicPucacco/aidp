@@ -22,12 +22,18 @@ jobs:
       - uses: hashicorp/setup-terraform@v4
 
       - name: Terraform fmt
-        run: terraform -chdir=bootstrap/terraform fmt -check -recursive
+        run: terraform fmt -check -recursive terraform
 
       - name: Terraform validate
         run: |
-          terraform -chdir=bootstrap/terraform init -backend=false -input=false
-          terraform -chdir=bootstrap/terraform validate
+          for dir in terraform/argocd terraform/aks; do
+            terraform -chdir="$dir" init -backend=false -input=false
+            terraform -chdir="$dir" validate
+          done
+
+      # Offline plan with mocked providers: no Azure credentials in CI (ADR-0016).
+      - name: Terraform test (AKS)
+        run: terraform -chdir=terraform/aks test
 
       - name: yamllint
         run: pipx run yamllint -s .
@@ -205,8 +211,8 @@ jobs:
           REVISION: ${{ github.event.pull_request.head.sha || github.sha }}
           REPO_URL: ${{ github.event.pull_request.head.repo.clone_url || format('{0}/{1}.git', github.server_url, github.repository) }}
         run: |
-          terraform -chdir=bootstrap/terraform init -input=false
-          terraform -chdir=bootstrap/terraform apply -input=false -auto-approve \
+          terraform -chdir=terraform/argocd init -input=false
+          terraform -chdir=terraform/argocd apply -input=false -auto-approve \
             -var kube_context=kind-aidp \
             -var repo_url="$REPO_URL" \
             -var target_revision="$REVISION"

@@ -1,4 +1,4 @@
-# Set by the root Application (bootstrap/terraform) so every child app tracks
+# Set by the root Application (terraform/argocd) so every child app tracks
 # the same repo and revision as the root.
 repoURL: https://github.com/NicPucacco/aidp.git
 targetRevision: main

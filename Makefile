@@ -3,7 +3,7 @@ SHELL := /usr/bin/env bash
 
 CLUSTER_NAME ?= aidp
 KUBE_CONTEXT ?= kind-$(CLUSTER_NAME)
-TF_DIR       := bootstrap/terraform
+TF_DIR       := terraform/argocd
 TF           := terraform -chdir=$(TF_DIR)
 # Argo CD tracks whatever is checked out: a phase tag if HEAD is exactly on
 # one, otherwise the current branch. It must exist on GitHub (Argo CD pulls
@@ -35,6 +35,25 @@ platform: ## Install the platform onto KUBE_CONTEXT (any conformant cluster)
 .PHONY: wait
 wait: ## Wait until every Argo CD application is Synced and Healthy
 	KUBE_CONTEXT=$(KUBE_CONTEXT) scripts/wait-for-platform.sh
+
+# --- AKS (production) --------------------------------------------------------
+# Needs `az login`, terraform/aks/backend.hcl and terraform/aks/terraform.tfvars
+# (copy the .example files). See terraform/README.md.
+AKS_TF := terraform -chdir=terraform/aks
+
+.PHONY: aks-plan
+aks-plan: ## Plan the AKS cluster (production)
+	$(AKS_TF) init -input=false -backend-config=backend.hcl
+	$(AKS_TF) plan -input=false -out=aks.tfplan
+
+.PHONY: aks-apply
+aks-apply: ## Apply the reviewed AKS plan from aks-plan
+	$(AKS_TF) apply -input=false aks.tfplan
+
+.PHONY: aks-test
+aks-test: ## Offline plan tests for the AKS module (mocked providers, no Azure access)
+	$(AKS_TF) init -backend=false -input=false >/dev/null
+	$(AKS_TF) test
 
 .PHONY: ui
 ui: ## Port-forward the Argo CD UI to http://localhost:8080
