@@ -1,0 +1,14 @@
+apiVersion: platform.fernhill.io/v1alpha1
+kind: WebService
+metadata:
+  name: ${{ values.name }}
+spec:
+  image: ${{ values.image }}
+  port: ${{ values.port }}
+  healthPath: ${{ values.healthPath }}
+  size: ${{ values.size }}
+  replicas: ${{ values.replicas }}
+  expose: ${{ values.expose }}
+{%- if values.withDatabase %}
+  database: ${{ values.name }}
+{%- endif %}

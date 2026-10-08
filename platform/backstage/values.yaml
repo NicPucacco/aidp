@@ -1,0 +1,18 @@
+# repoURL / targetRevision are set by platform/apps (same as every child app).
+repoURL: https://github.com/NicPucacco/aidp.git
+targetRevision: main
+
+image:
+  repository: ghcr.io/nicpucacco/aidp-backstage
+  # Content-addressed: the git tree hash of portal/ (`git rev-parse HEAD:portal`).
+  # CI fails if this doesn't match, and publishes exactly this tag on merge,
+  # so a checked-out tag always runs the portal code it contains (ADR-0011).
+  tag: "73a6ef2a6f0b6fcf0cab436333f26710714e787f"
+
+baseUrl: http://backstage.localhost:8000
+
+waitImage: busybox:1.37.0
+
+gitSync:
+  image: registry.k8s.io/git-sync/git-sync:v4.7.1
+  period: 60s

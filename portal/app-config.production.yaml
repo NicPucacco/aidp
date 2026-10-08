@@ -1,0 +1,74 @@
+# In-cluster config, layered over app-config.yaml. Deployed by
+# platform/apps/templates/backstage.yaml. See ADR-0011.
+
+app:
+  baseUrl: ${APP_BASE_URL}
+
+backend:
+  baseUrl: ${APP_BASE_URL}
+  listen: ':7007'
+  cors:
+    origin: ${APP_BASE_URL}
+  database:
+    client: pg
+    # Credentials come from the platform's own Database API (the platform
+    # team is a tenant of its own golden path). The CloudNativePG app user
+    # can't CREATE DATABASE, so plugins get a schema each instead of a
+    # database each.
+    pluginDivisionMode: schema
+    connection:
+      host: ${PGHOST}
+      port: ${PGPORT}
+      user: ${PGUSER}
+      password: ${PGPASSWORD}
+      database: ${PGDATABASE}
+
+# Unset GITHUB_TOKEN leaves the integration anonymous: browsing works, and
+# templates can be dry-run. With a token, templates open real PRs.
+integrations:
+  github:
+    - host: github.com
+      token: ${GITHUB_TOKEN}
+
+auth:
+  providers:
+    # Local showcase only. A real deployment uses the GitHub or OIDC
+    # provider; identity matters once templates open PRs as the user.
+    guest:
+      dangerouslyAllowOutsideDevelopment: true
+
+techdocs:
+  builder: local
+  generator:
+    runIn: local
+
+catalog:
+  rules:
+    - allow: [Component, System, API, Resource, Location, Group, User, Domain, Template]
+  # A git-sync sidecar keeps /repo/aidp in step with the branch Argo CD
+  # tracks. Reading files avoids needing a GitHub token just to browse, and
+  # a merged tenant PR shows up in the catalog within a minute.
+  locations:
+    - type: file
+      target: /repo/aidp/catalog/*.yaml
+    - type: file
+      target: /repo/aidp/tenants/*/*/catalog-info.yaml
+    - type: file
+      target: /repo/aidp/golden-paths/*/template.yaml
+      rules:
+        - allow: [Template]
+  processingInterval: {minutes: 1}
+
+kubernetes:
+  serviceLocatorMethod:
+    type: multiTenant
+  clusterLocatorMethods:
+    - type: config
+      clusters:
+        # Read-only ServiceAccount (platform/backstage/rbac.yaml). The portal
+        # can show what's running; it can never change it (ADR-0001).
+        - name: local
+          url: https://kubernetes.default.svc
+          authProvider: serviceAccount
+          caFilePath: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+          skipMetricsLookup: true

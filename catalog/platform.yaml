@@ -1,0 +1,39 @@
+# The platform itself, described in its own catalog.
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: fernhill-platform
+  title: Fernhill Platform
+  description: The paved road. Platform APIs, policies, and the portal.
+  links:
+    - url: https://github.com/NicPucacco/aidp/tree/main/docs/adr
+      title: Architecture decisions
+spec:
+  owner: group:platform
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: developer-portal
+  title: Developer Portal
+  description: This Backstage instance. Reads Git; writes only pull requests.
+  annotations:
+    backstage.io/kubernetes-label-selector: app.kubernetes.io/name=backstage
+    backstage.io/kubernetes-namespace: backstage
+spec:
+  type: website
+  lifecycle: experimental
+  owner: group:platform
+  system: fernhill-platform
+  dependsOn:
+    - resource:backstage-db
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: backstage-db
+  description: The portal's own Postgres, provisioned through the Database API.
+spec:
+  type: database
+  owner: group:platform
+  system: fernhill-platform

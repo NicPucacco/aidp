@@ -1,0 +1,9 @@
+# Labelled like a tenant namespace on purpose: the platform's own portal is
+# held to the same baseline policies as every team's services (ADR-0005).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: backstage
+  labels:
+    platform.fernhill.io/managed: "true"
+    platform.fernhill.io/owner: platform

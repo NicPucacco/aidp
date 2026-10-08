@@ -12,7 +12,10 @@ For every file under tenants/<team>/:
 This is what makes a tenant PR, from a human or an agent, cheap to review:
 by the time someone looks at it, it's known to compose and to pass policy.
 
-Usage: scripts/check-tenants.py [--keep DIR]
+catalog-info.yaml files are Backstage entities, not Kubernetes objects;
+Argo CD excludes them from sync and they're skipped here.
+
+Usage: scripts/check-tenants.py [--tenants DIR] [--keep DIR]
 Needs: crossplane CLI, kyverno CLI, Docker, PyYAML.
 """
 
@@ -33,12 +36,14 @@ GROUP = "platform.fernhill.io"
 KINDS = {"Database": "database", "WebService": "webservice"}
 
 
-def tenant_objects():
-    for team_dir in sorted(p for p in TENANTS.iterdir() if p.is_dir()):
+def tenant_objects(tenants: pathlib.Path):
+    for team_dir in sorted(p for p in tenants.iterdir() if p.is_dir()):
         for path in sorted(team_dir.rglob("*.y*ml")):
+            if path.name == "catalog-info.yaml":
+                continue
             for doc in yaml.safe_load_all(path.read_text()):
                 if doc:
-                    yield team_dir.name, path.relative_to(ROOT), doc
+                    yield team_dir.name, path.relative_to(tenants.parent), doc
 
 
 def boundary_errors(path, doc):
@@ -53,17 +58,23 @@ def boundary_errors(path, doc):
     return errors
 
 
+class RenderError(Exception):
+    pass
+
+
 def render(team, doc, workdir):
     xr = dict(doc, metadata=dict(doc["metadata"], namespace=team))
     xr_path = workdir / f"xr-{team}-{doc['kind']}-{doc['metadata']['name']}.yaml"
     xr_path.write_text(yaml.safe_dump(xr))
     api = APIS / KINDS[doc["kind"]]
-    out = subprocess.run(
+    proc = subprocess.run(
         ["crossplane", "render", str(xr_path), str(api / "composition.yaml"), str(APIS / "functions.yaml")],
-        check=True,
         capture_output=True,
         text=True,
-    ).stdout
+    )
+    if proc.returncode != 0:
+        raise RenderError(f"{doc['kind']} {team}/{doc['metadata']['name']} failed to render:\n{proc.stderr.strip()}")
+    out = proc.stdout
     rendered = []
     for obj in yaml.safe_load_all(out):
         if not obj or obj.get("apiVersion", "").startswith(GROUP) or obj.get("kind") == "Result":
@@ -75,7 +86,8 @@ def render(team, doc, workdir):
 
 def main() -> int:
     keep = sys.argv[sys.argv.index("--keep") + 1] if "--keep" in sys.argv else None
-    objects = list(tenant_objects())
+    tenants = pathlib.Path(sys.argv[sys.argv.index("--tenants") + 1]) if "--tenants" in sys.argv else TENANTS
+    objects = list(tenant_objects(tenants.resolve()))
 
     errors = [e for _, path, doc in objects for e in boundary_errors(path, doc)]
     if errors:
@@ -91,7 +103,11 @@ def main() -> int:
         teams = set()
         for team, path, doc in objects:
             teams.add(team)
-            resources = render(team, doc, workdir)
+            try:
+                resources = render(team, doc, workdir)
+            except RenderError as e:
+                print(f"{path}: {e}")
+                return 1
             out = rendered_dir / f"{team}-{doc['kind'].lower()}-{doc['metadata']['name']}.yaml"
             out.write_text(yaml.safe_dump_all(resources))
             kinds = ", ".join(sorted(r["kind"] for r in resources))

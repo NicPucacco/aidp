@@ -1,0 +1,72 @@
+# Fernhill's teams (docs/story.md). Group names match tenants/<team>/
+# directories, which match namespaces, so ownership is the same string
+# everywhere: Git, Kubernetes labels, and the catalog.
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: engineering
+  title: Engineering
+spec:
+  type: department
+  children: [platform, billing, routing, warehouse, tracking, portal]
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: platform
+  title: Platform
+  description: Owns the paved road. 4 engineers.
+spec:
+  type: team
+  parent: engineering
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: billing
+  title: Billing
+spec:
+  type: team
+  parent: engineering
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: routing
+  title: Routing
+spec:
+  type: team
+  parent: engineering
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: warehouse
+  title: Warehouse
+spec:
+  type: team
+  parent: engineering
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: tracking
+  title: Tracking
+spec:
+  type: team
+  parent: engineering
+  children: []
+---
+apiVersion: backstage.io/v1alpha1
+kind: Group
+metadata:
+  name: portal
+  title: Customer Portal
+spec:
+  type: team
+  parent: engineering
+  children: []

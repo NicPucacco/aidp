@@ -1,0 +1,73 @@
+# Golden path: a standalone database (story, problem #1: five days -> one PR).
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: new-database
+  title: New database
+  description: >-
+    A t-shirt-sized Postgres database. Credentials land in a Secret your
+    services reference; you never handle them.
+  tags: [golden-path, database]
+spec:
+  owner: group:platform
+  type: resource
+
+  parameters:
+    - title: Database
+      required: [name, owner]
+      properties:
+        name:
+          title: Name
+          type: string
+          pattern: "^[a-z][a-z0-9-]{1,30}[a-z0-9]$"
+          ui:autofocus: true
+        owner:
+          title: Owning team
+          type: string
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+              spec.type: team
+        size:
+          title: Size
+          type: string
+          enum: [small, medium, large]
+          enumNames: ["Small (1 instance, 1Gi)", "Medium (2 instances, 10Gi)", "Large (3 instances, 50Gi)"]
+          default: small
+        databaseName:
+          title: Database name
+          type: string
+          pattern: "^[a-z][a-z0-9_]{0,62}$"
+          default: app
+
+  steps:
+    - id: database
+      name: Generate Database
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          team: ${{ parameters.owner | parseEntityRef | pick('name') }}
+          size: ${{ parameters.size }}
+          databaseName: ${{ parameters.databaseName }}
+
+    - id: publish
+      name: Open pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?owner=NicPucacco&repo=aidp
+        branchName: portal/${{ parameters.owner | parseEntityRef | pick('name') }}/${{ parameters.name }}
+        targetPath: tenants/${{ parameters.owner | parseEntityRef | pick('name') }}/${{ parameters.name }}
+        title: "[${{ parameters.owner | parseEntityRef | pick('name') }}] New database: ${{ parameters.name }}"
+        description: |
+          Requested from the Fernhill Developer Portal (golden path: **new database**).
+
+          Size `${{ parameters.size }}`, database `${{ parameters.databaseName }}`,
+          owned by `${{ parameters.owner | parseEntityRef | pick('name') }}`.
+
+  output:
+    links:
+      - title: Pull request
+        url: ${{ steps.publish.output.remoteUrl }}

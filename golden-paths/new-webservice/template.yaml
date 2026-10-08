@@ -1,0 +1,156 @@
+# Golden path: a new web service, optionally with its own database.
+# Produces tenant files only and opens a pull request; it never touches the
+# cluster (ADR-0001). CI renders the result through the real compositions and
+# policies before review (ADR-0009). Skeleton output is tested in CI too.
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: new-webservice
+  title: New web service
+  description: >-
+    An HTTP service on the paved road: pinned image, probes, limits, non-root,
+    a route on the platform Gateway, and optionally a Postgres database.
+  tags: [golden-path, webservice, database]
+spec:
+  owner: group:platform
+  type: service
+
+  parameters:
+    - title: Service
+      required: [name, owner]
+      properties:
+        name:
+          title: Name
+          type: string
+          description: Lowercase, used for the Kubernetes objects and the URL.
+          pattern: "^[a-z][a-z0-9-]{1,30}[a-z0-9]$"
+          ui:autofocus: true
+        description:
+          title: Description
+          type: string
+          default: ""
+        owner:
+          title: Owning team
+          type: string
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+              spec.type: team
+
+    - title: Runtime
+      required: [image]
+      properties:
+        image:
+          title: Container image
+          type: string
+          description: Pinned to a tag or digest; ':latest' is rejected.
+          pattern: "^.+(:[^/:@]+|@sha256:[a-f0-9]{64})$"
+          default: ghcr.io/stefanprodan/podinfo:6.15.0
+        port:
+          title: Container port
+          type: integer
+          default: 9898
+          minimum: 1024
+          maximum: 65535
+        healthPath:
+          title: Health check path
+          type: string
+          default: /readyz
+        size:
+          title: Size
+          type: string
+          enum: [small, medium, large]
+          enumNames: ["Small (100m / 256Mi)", "Medium (250m / 512Mi)", "Large (1 CPU / 2Gi)"]
+          default: small
+        replicas:
+          title: Replicas
+          type: integer
+          default: 2
+          minimum: 1
+          maximum: 10
+        expose:
+          title: Route traffic through the platform Gateway
+          type: boolean
+          default: true
+
+    - title: Database
+      properties:
+        withDatabase:
+          title: Give this service its own Postgres database
+          type: boolean
+          default: false
+      dependencies:
+        withDatabase:
+          oneOf:
+            - properties:
+                withDatabase: {const: false}
+            - properties:
+                withDatabase: {const: true}
+                databaseSize:
+                  title: Database size
+                  type: string
+                  enum: [small, medium, large]
+                  enumNames: ["Small (1 instance, 1Gi)", "Medium (2 instances, 10Gi)", "Large (3 instances, 50Gi)"]
+                  default: small
+                databaseName:
+                  title: Database name
+                  type: string
+                  pattern: "^[a-z][a-z0-9_]{0,62}$"
+                  default: app
+
+  steps:
+    - id: service
+      name: Generate WebService
+      action: fetch:template
+      input:
+        url: ./skeleton
+        values:
+          name: ${{ parameters.name }}
+          description: ${{ parameters.description }}
+          team: ${{ parameters.owner | parseEntityRef | pick('name') }}
+          image: ${{ parameters.image }}
+          port: ${{ parameters.port }}
+          healthPath: ${{ parameters.healthPath }}
+          size: ${{ parameters.size }}
+          replicas: ${{ parameters.replicas }}
+          expose: ${{ parameters.expose }}
+          withDatabase: ${{ parameters.withDatabase }}
+
+    - id: database
+      name: Generate Database
+      if: ${{ parameters.withDatabase }}
+      action: fetch:template
+      input:
+        url: ./skeleton-database
+        values:
+          name: ${{ parameters.name }}
+          team: ${{ parameters.owner | parseEntityRef | pick('name') }}
+          size: ${{ parameters.databaseSize }}
+          databaseName: ${{ parameters.databaseName }}
+
+    - id: publish
+      name: Open pull request
+      action: publish:github:pull-request
+      input:
+        repoUrl: github.com?owner=NicPucacco&repo=aidp
+        branchName: portal/${{ parameters.owner | parseEntityRef | pick('name') }}/${{ parameters.name }}
+        targetPath: tenants/${{ parameters.owner | parseEntityRef | pick('name') }}/${{ parameters.name }}
+        title: "[${{ parameters.owner | parseEntityRef | pick('name') }}] New web service: ${{ parameters.name }}"
+        description: |
+          Requested from the Fernhill Developer Portal (golden path: **new web service**).
+
+          | | |
+          |---|---|
+          | Team | `${{ parameters.owner | parseEntityRef | pick('name') }}` |
+          | Image | `${{ parameters.image }}` |
+          | Size / replicas | `${{ parameters.size }}` / `${{ parameters.replicas }}` |
+          | Database | `${{ parameters.withDatabase }}` |
+
+          CI renders these files through the platform compositions and checks
+          the result against platform policy before review (ADR-0009).
+
+  output:
+    links:
+      - title: Pull request
+        url: ${{ steps.publish.output.remoteUrl }}
