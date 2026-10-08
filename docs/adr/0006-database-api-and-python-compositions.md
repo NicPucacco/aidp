@@ -1,6 +1,6 @@
 # ADR-0006: A t-shirt-sized Database API, composed in tested Python
 
-- **Status:** Accepted
+- **Status:** Accepted. §3 superseded by [ADR-0014](0014-compositions-are-go-templates.md) (compositions are now Go templates)
 - **Date:** 2026-10-06
 - **Phase:** v2-database-path
 
@@ -51,6 +51,9 @@ exactly those kinds through an aggregated ClusterRole (`platform/apis/rbac.yaml`
 
 ### 3. Composition logic in Python, with unit tests, embedded at build time
 
+> **Superseded by ADR-0014.** Kept for the record; the current implementation
+> is a `function-go-templating` Composition tested with `crossplane render`.
+
 The logic lives in `platform/apis/database/compose.py` and runs on
 [function-python](https://github.com/crossplane-contrib/function-python).
 `scripts/gen-compositions.py` embeds it into `composition.yaml`. CI:
@@ -69,7 +72,7 @@ The logic lives in `platform/apis/database/compose.py` and runs on
 | A packaged Python function (own image, own xpkg) | The right end state, but it needs an image pipeline, a registry, and package versioning before there's a second API to justify it. The generator keeps the source testable today, and moving to a packaged function later only changes the delivery, not the code. |
 | Inline script edited directly in the Composition | Untestable, and a YAML block scalar is a terrible code editor. |
 | Expose CloudNativePG `Cluster` directly to tenants | Couples every tenant to one operator's schema. The cloud story ends there, and so does the platform team's ability to change defaults. |
-| Terraform modules triggered from CI | No continuous reconciliation, so drift goes unnoticed, and no status API to bind to. The stronger reason, that `plan` runs author-controlled code with credentials, became decisive with agent authors in v5: see [ADR-0012](0012-why-not-terraform-modules.md). |
+| Terraform modules triggered from CI | No continuous reconciliation, so drift goes unnoticed, and no status API to bind to. The stronger reason, that `plan` runs author-controlled code with credentials, became decisive with agent authors in v5: see [ADR-0015](0015-why-not-terraform-modules.md). |
 
 ## Consequences
 

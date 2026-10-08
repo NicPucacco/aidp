@@ -1,4 +1,4 @@
-# ADR-0012: Tenants submit data, not code, so the platform API isn't Terraform modules
+# ADR-0015: Tenants submit data, not code, so the platform API isn't Terraform modules
 
 - **Status:** Proposed
 - **Date:** 2026-10-07

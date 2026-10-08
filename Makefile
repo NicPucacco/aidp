@@ -91,12 +91,12 @@ lint: ## Run the same static checks as CI
 	helm lint platform/apps
 
 .PHONY: generate
-generate: ## Regenerate compositions from their compose.py
-	scripts/gen-compositions.py
+generate: ## Regenerate catalog/apis.yaml from the XRDs
+	scripts/gen-catalog.py
 
 .PHONY: test-apis
-test-apis: ## Unit-test composition functions (needs: pip install -r platform/apis/requirements-dev.txt)
-	scripts/gen-compositions.py --check
+test-apis: ## Render XRs through the real Compositions (needs Docker + crossplane CLI)
+	scripts/gen-catalog.py --check
 	pytest -q platform/apis
 
 .PHONY: check-tenants

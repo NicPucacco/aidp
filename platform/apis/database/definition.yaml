@@ -1,7 +1,7 @@
 # The Database API: what a Fernhill team asks for, in their terms.
 #
 # Teams choose a t-shirt size, not instance counts or storage classes. What
-# "small" means is the platform team's decision, encoded once in compose.py,
+# "small" means is the platform team's decision, encoded once in its composition,
 # and can change (or map to RDS in a cloud composition) without touching any
 # tenant's YAML. See ADR-0006.
 apiVersion: apiextensions.crossplane.io/v2

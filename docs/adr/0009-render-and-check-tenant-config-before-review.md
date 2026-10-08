@@ -29,7 +29,7 @@ without a human in the loop.
 1. **Boundary:** only `platform.fernhill.io` kinds; `metadata.namespace`
    must not be set (this closes the gap noted in ADR-0007).
 2. **Render:** each object goes through its real Composition with
-   `crossplane render`, which runs the same function-python package the
+   `crossplane render`, which runs the same composition function package the
    cluster runs.
 3. **Policy:** the rendered resources are evaluated with `kyverno apply`
    against `platform/policies/`, with each team namespace labelled the way
@@ -45,13 +45,13 @@ and land on the PR before any reviewer sees it.
 | Rely on admission at sync time | Correct but late: the author finds out after merge, from an Argo CD error. |
 | Kyverno policies written against XRs | Doubles the policy set and drifts from what's actually enforced on workloads. |
 | Server-side dry-run against a shared cluster | Needs cluster credentials in CI (contradicts ADR-0001's "nothing writes to clusters but Argo CD") and depends on cluster state. |
-| Unit tests on `compose.py` only | Those check the platform's code. This checks the tenant's input against it. Both are needed. |
+| Composition tests only | Those check the platform's code. This checks the tenant's input against it. Both are needed. |
 
 ## Consequences
 
 - Reviewers of tenant PRs judge intent ("should Billing have a large
   database?"), not syntax or compliance.
-- CI needs Docker to render, since function-python runs as a container.
+- CI needs Docker to render, since composition functions run as containers.
   That's fine on GitHub-hosted runners.
 - The Crossplane CLI now ships on its own release train, so it can't be
   derived from the cluster version the way the Kyverno CLI is. It's pinned to

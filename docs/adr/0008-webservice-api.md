@@ -78,7 +78,7 @@ count too.
 - No autoscaling, no secrets other than the database's, no sidecars, no
   non-HTTP ports yet. Each is a deliberate future field, added when a team needs it.
 - The platform now owns a security posture for every paved-road workload. A CVE
-  in, say, the default seccomp handling becomes one PR to `compose.py`.
+  in, say, the default seccomp handling becomes one PR to the WebService composition.
 
 ## What would change my mind
 

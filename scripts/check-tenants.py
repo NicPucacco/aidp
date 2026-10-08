@@ -5,7 +5,7 @@ For every file under tenants/<team>/:
   1. Boundary checks (ADR-0007): only platform.fernhill.io kinds, and no
      metadata.namespace (the platform decides the namespace).
   2. Render each object through its real Composition with `crossplane render`
-     (runs the same function-python package the cluster runs).
+     (runs the same composition function package the cluster runs).
   3. Evaluate the XRs and their rendered resources against the real Kyverno policies, with
      each team namespace labelled the way the ApplicationSet labels it.
 

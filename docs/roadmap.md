@@ -44,6 +44,10 @@ platform's own changes go through the same contract it offers everyone else.
   controllers, a single shared Postgres) is a candidate follow-up rather
   than something to quietly tune away.
 
+- **Compositions moved from Python to Go templates** after v5
+  ([ADR-0014](adr/0014-compositions-are-go-templates.md)). No tenant-facing API
+  changed, which is the abstraction doing its job.
+
 ## Explicitly out of scope
 
 - **Multi-cluster / fleet management.** Real, but orthogonal to the story.

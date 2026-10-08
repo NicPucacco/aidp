@@ -1,6 +1,6 @@
 # Platform APIs: XRDs, compositions, functions. Wave 1 waits for Crossplane
-# and CloudNativePG (wave 0). Only YAML is synced; compose.py and tests are
-# source/test files that Argo CD ignores.
+# and CloudNativePG (wave 0). Only YAML is synced; tests/ holds pytest files
+# that Argo CD ignores.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
