@@ -53,7 +53,7 @@ transition adds an interface and some policy, not a second platform.
 | Terraform bootstraps Argo CD, then stops | Exactly one owner per resource; no Terraform/Argo drift fights | [0003](docs/adr/0003-terraform-bootstraps-argo-cd-owns-the-rest.md) |
 | Target the Kubernetes API, not a distribution | Runs on kind, k3d, EKS, GKE… and lets CI test what reviewers run | [0004](docs/adr/0004-kubernetes-agnostic-local-first.md) |
 | Same Kyverno policies in CI and at admission; enforcement is opt-in per namespace | Authors (human or agent) get feedback before review; legacy services aren't broken on day one | [0005](docs/adr/0005-kyverno-policies-run-in-ci-and-at-admission.md) |
-| Databases are requested by t-shirt size; composition logic is unit-tested Python | Tenants state intent, the platform owns what "small" means, and the logic is testable | [0006](docs/adr/0006-database-api-and-python-compositions.md) |
+| Databases are requested by t-shirt size; compositions are Go templates, tested by rendering real XRs | Tenants state intent, the platform owns what "small" means, and the logic is testable | [0006](docs/adr/0006-database-api-and-python-compositions.md) |
 | Tenant directories may only contain platform API objects; the platform owns namespaces and labels | Small, explicit API surface. Matters most once agents can write to it | [0007](docs/adr/0007-tenant-boundary.md) |
 | Probes, limits, non-root, PDBs, routing: decided once in the WebService composition | 14 services stop being deployed 14 ways; compliant by construction | [0008](docs/adr/0008-webservice-api.md) |
 | Tenant PRs are rendered through real compositions and policy-checked in CI | Reviewers judge intent, not YAML. The gate agent PRs will rely on | [0009](docs/adr/0009-render-and-check-tenant-config-before-review.md) |
@@ -61,6 +61,7 @@ transition adds an interface and some policy, not a second platform.
 | The portal reads Git and writes only PRs; its image is tagged by content hash | Discoverability without a second write path; every commit knows its exact portal | [0011](docs/adr/0011-the-portal-is-a-thin-client.md) |
 | Agents get an MCP server whose only write is a PR, as their own GitHub App identity | Same golden paths as humans, attributable by construction; no new control plane | [0012](docs/adr/0012-agent-interface.md) |
 | Agent guardrails are layered; limits follow *who asked*, stamped on the object | No single layer trusted; limits survive from PR to admission | [0013](docs/adr/0013-agent-guardrails.md) |
+| Compositions are Go templates, tested by rendering real XRs | The team's existing idiom (Helm); one artifact to review; the API didn't change when the engine did | [0014](docs/adr/0014-compositions-are-go-templates.md) |
 
 More ADRs are added as each phase lands. Every ADR ends with **"What would
 change my mind"**, because a decision with no exit criteria is just a preference.
@@ -71,7 +72,7 @@ change my mind"**, because a decision with no exit criteria is just a preference
 |---|---|
 | Bootstrap | Terraform (Helm provider only) |
 | GitOps | Argo CD (app-of-apps, ApplicationSets) |
-| Platform APIs | Crossplane v2, composition functions in Python |
+| Platform APIs | Crossplane v2, `function-go-templating` compositions |
 | Policy | Kyverno, the same policies run in CI and at admission |
 | Ingress | Gateway API (Envoy Gateway) |
 | Portal | Backstage |

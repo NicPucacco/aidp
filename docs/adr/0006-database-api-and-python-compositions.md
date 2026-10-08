@@ -1,6 +1,6 @@
 # ADR-0006: A t-shirt-sized Database API, composed in tested Python
 
-- **Status:** Accepted
+- **Status:** Accepted. §3 superseded by [ADR-0014](0014-compositions-are-go-templates.md) (compositions are now Go templates)
 - **Date:** 2026-10-06
 - **Phase:** v2-database-path
 
@@ -50,6 +50,9 @@ CloudNativePG `Cluster`) without `provider-kubernetes`. Crossplane gets RBAC for
 exactly those kinds through an aggregated ClusterRole (`platform/apis/rbac.yaml`).
 
 ### 3. Composition logic in Python, with unit tests, embedded at build time
+
+> **Superseded by ADR-0014.** Kept for the record; the current implementation
+> is a `function-go-templating` Composition tested with `crossplane render`.
 
 The logic lives in `platform/apis/database/compose.py` and runs on
 [function-python](https://github.com/crossplane-contrib/function-python).

@@ -62,15 +62,16 @@ jobs:
 
       - uses: actions/setup-python@v7
         with:
-          # function-python runs on Debian 13's Python 3.13.
           python-version: "3.13"
 
-      - name: Compositions match their compose.py
-        run: scripts/gen-compositions.py --check
+      - name: Catalog API entities match their XRDs
+        run: scripts/gen-catalog.py --check
 
-      - name: Unit tests
+      # Renders XRs through the real go-templating Compositions (ADR-0014).
+      - name: Composition tests
         run: |
           pip install -r platform/apis/requirements-dev.txt
+          scripts/install-crossplane-cli.sh
           pytest -q platform/apis
 
   # Tenant config is rendered through the real compositions and checked
