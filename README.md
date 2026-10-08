@@ -63,6 +63,7 @@ transition adds an interface and some policy, not a second platform.
 | Agent guardrails are layered; limits follow *who asked*, stamped on the object | No single layer trusted; limits survive from PR to admission | [0013](docs/adr/0013-agent-guardrails.md) |
 | Production runs on AKS via the Azure Verified Module, in its own Terraform state | Secure defaults are explicit inputs; the cluster's lifecycle is separate from Argo CD's bootstrap; still runs on kind | [0016](docs/adr/0016-production-runs-on-aks.md) |
 | One Gateway definition; Terraform supplies domain, static IP and TLS settings per environment | No forked `platform/`, no environment values in Git; one wildcard cert covers every tenant | [0017](docs/adr/0017-ingress-per-environment.md) |
+| Entra ID sign-in for Argo CD and the portal via workload identity: no client secrets anywhere | Nothing to rotate or leak; Entra decides who gets in before either app sees a request | [0018](docs/adr/0018-sso-without-secrets.md) |
 | Compositions are Go templates, tested by rendering real XRs | The team's existing idiom (Helm); one artifact to review; the API didn't change when the engine did | [0014](docs/adr/0014-compositions-are-go-templates.md) |
 
 More ADRs are added as each phase lands. Every ADR ends with **"What would

@@ -23,8 +23,9 @@ spec:
     - name: platform
       namespace: gateway
   hostnames:
-    - backstage.localhost
+    - {{ .Values.host | quote }}
   rules:
     - backendRefs:
-        - name: backstage
+        # With SSO, the Gateway only ever reaches Backstage through oauth2-proxy.
+        - name: {{ ternary "oauth2-proxy" "backstage" .Values.sso.enabled }}
           port: 80

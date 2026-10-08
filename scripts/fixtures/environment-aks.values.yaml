@@ -18,3 +18,10 @@ environment:
       resourceGroup: rg-fernhill-prod
       zone: platform.fernhill.example
       clientID: 00000000-0000-0000-0000-000000000002
+  sso:
+    enabled: true
+    tenantID: 00000000-0000-0000-0000-00000000000a
+    argocdClientID: 00000000-0000-0000-0000-00000000000b
+    portalClientID: 00000000-0000-0000-0000-00000000000c
+    adminsGroupID: 00000000-0000-0000-0000-00000000000d
+    engineersGroupID: 00000000-0000-0000-0000-00000000000e

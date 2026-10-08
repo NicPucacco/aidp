@@ -40,3 +40,15 @@ environment:
       resourceGroup: ""
       zone: ""
       clientID: ""
+  # Sign-in with Microsoft Entra ID (ADR-0018). No client secrets: Argo CD
+  # and the portal's oauth2-proxy authenticate to Entra with workload
+  # identity. Off locally (Argo CD admin, Backstage guest).
+  sso:
+    enabled: false
+    tenantID: ""
+    argocdClientID: ""
+    portalClientID: ""
+    # Entra group object IDs: admins get Argo CD admin; engineers read-only
+    # Argo CD and the portal. Nobody else gets in.
+    adminsGroupID: ""
+    engineersGroupID: ""

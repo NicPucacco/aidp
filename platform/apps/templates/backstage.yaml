@@ -19,7 +19,14 @@ spec:
         repoURL: {{ .Values.repoURL }}
         targetRevision: {{ .Values.targetRevision }}
         {{- $env := .Values.environment }}
+        host: {{ printf "backstage.%s" $env.baseDomain | quote }}
         baseUrl: {{ printf "%s://backstage.%s%s" (ternary "https" "http" $env.tls.enabled) $env.baseDomain $env.urlPort | quote }}
+        sso:
+          enabled: {{ $env.sso.enabled }}
+          tenantID: {{ $env.sso.tenantID | quote }}
+          portalClientID: {{ $env.sso.portalClientID | quote }}
+          adminsGroupID: {{ $env.sso.adminsGroupID | quote }}
+          engineersGroupID: {{ $env.sso.engineersGroupID | quote }}
   destination:
     server: https://kubernetes.default.svc
     namespace: backstage

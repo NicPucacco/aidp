@@ -10,6 +10,13 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.5"
     }
+    # Entra ID app registrations for SSO (Microsoft Graph). The identity
+    # running apply needs Application.ReadWrite.OwnedBy and
+    # AppRoleAssignment.ReadWrite.All.
+    azuread = {
+      source  = "hashicorp/azuread"
+      version = "~> 3.10"
+    }
   }
 
   # Remote state in Azure Storage, configured at init time so no account
@@ -18,5 +25,6 @@ terraform {
   backend "azurerm" {}
 }
 
-# Authenticates like the Azure CLI: `az login` locally, OIDC federation in CI.
+# Both authenticate like the Azure CLI: `az login` locally, OIDC federation in CI.
 provider "azapi" {}
+provider "azuread" {}
