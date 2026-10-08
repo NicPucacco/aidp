@@ -84,8 +84,10 @@ tenant gate. A golden path can't generate a PR that fails CI.
 - Backstage can't resolve `$text` placeholders relative to *file* locations,
   so the API entities embed their XRD schema instead. It's generated into
   `catalog/apis.yaml` by the same generator and drift check as the compositions.
-- The first image publish creates a **private** GHCR package. It has to be made
-  public once (a manual step) so people without credentials can pull it.
+- The image is published from Actions with an `org.opencontainers.image.source`
+  label pointing at this public repo, so the GHCR package inherits public
+  visibility. Anyone can pull it without credentials (verified with an
+  anonymous token).
 
 ## What would change my mind
 

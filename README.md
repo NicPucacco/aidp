@@ -59,6 +59,8 @@ transition adds an interface and some policy, not a second platform.
 | Tenant PRs are rendered through real compositions and policy-checked in CI | Reviewers judge intent, not YAML. The gate agent PRs will rely on | [0009](docs/adr/0009-render-and-check-tenant-config-before-review.md) |
 | XRDs are never pruned; breaking API changes go add → migrate → remove | Learned the hard way: a rename deadlocked the platform | [0010](docs/adr/0010-platform-api-lifecycle.md) |
 | The portal reads Git and writes only PRs; its image is tagged by content hash | Discoverability without a second write path; every commit knows its exact portal | [0011](docs/adr/0011-the-portal-is-a-thin-client.md) |
+| Agents get an MCP server whose only write is a PR, as their own GitHub App identity | Same golden paths as humans, attributable by construction; no new control plane | [0012](docs/adr/0012-agent-interface.md) |
+| Agent guardrails are layered; limits follow *who asked*, stamped on the object | No single layer trusted; limits survive from PR to admission | [0013](docs/adr/0013-agent-guardrails.md) |
 
 More ADRs are added as each phase lands. Every ADR ends with **"What would
 change my mind"**, because a decision with no exit criteria is just a preference.
@@ -115,6 +117,14 @@ Already have a cluster? Skip kind:
 make platform KUBE_CONTEXT=my-context
 ```
 
+## Agents
+
+Open this repo in Claude Code (or any MCP client) after `make agent-setup`,
+and ask for infrastructure in plain language. The agent discovers the golden
+paths, validates a proposal, and opens a PR as `aidp-agent[bot]`, which then
+goes through the same CI and human review as everyone else. Without GitHub
+credentials it runs in dry-run mode. See [docs/agents.md](docs/agents.md).
+
 ## Repository map
 
 ```
@@ -124,6 +134,7 @@ tenants/       Developers + agents: one directory per team and service (PR-only)
 golden-paths/  Backstage templates: generate tenant files, open a PR
 catalog/       Teams, the platform system, and its APIs, as Backstage entities
 portal/        The Backstage app (built in CI, tagged by content hash)
+agents/        The platform MCP server: agents discover and propose, via PR only
 docs/          Story, roadmap, ADRs
 .github/      CI, CODEOWNERS
 ```

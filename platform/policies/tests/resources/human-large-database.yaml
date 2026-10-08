@@ -1,0 +1,7 @@
+apiVersion: platform.fernhill.io/v1alpha1
+kind: Database
+metadata:
+  name: human-large-database
+  namespace: billing
+spec:
+  size: large

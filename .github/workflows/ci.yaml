@@ -88,7 +88,7 @@ jobs:
 
       - name: Install CLIs
         run: |
-          pip install pyyaml==6.0.3 jinja2==3.1.6
+          pip install pyyaml==6.0.3 jinja2==3.1.6 -e agents/platform-mcp
           scripts/install-crossplane-cli.sh
           scripts/install-kyverno-cli.sh
 
@@ -98,6 +98,47 @@ jobs:
       # Golden paths must generate PRs that pass this same gate.
       - name: Render golden-path templates through the gate
         run: scripts/test-templates.py
+
+      # Agents get the same gate, and a rogue agent that skips the MCP
+      # server's own checks is still stopped here (ADR-0013).
+      - name: Run agent proposals through the gate
+        run: scripts/test-agent-proposals.py
+
+  agent-mcp:
+    name: Platform MCP server tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Unit tests
+        run: |
+          pip install -e 'agents/platform-mcp[test]'
+          pytest -q agents/platform-mcp
+
+  # Extra rules for PRs opened by agents; human PRs pass straight through.
+  agent-guardrails:
+    name: Agent guardrails
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.13"
+
+      - name: Check agent PR rules
+        env:
+          AGENT_AUTHORS: aidp-agent[bot]
+        run: |
+          pip install pyyaml==6.0.3
+          scripts/check-agent-pr.py
 
   portal:
     name: Portal image
