@@ -135,15 +135,41 @@ any other. Without GitHub credentials it stops at a dry run.
 ## Repository layout
 
 ```
-terraform/     the AKS cluster (aks/) and the Argo CD bootstrap (argocd/)
-bootstrap/     the local kind cluster definition
-platform/      what Argo CD deploys: APIs, policies, gateway, portal, the apps themselves
-tenants/       team-owned config, one folder per team and service
-golden-paths/  Backstage templates that generate tenant files and open a PR
-catalog/       teams, the platform and its APIs, as Backstage entities
-portal/        the Backstage app
-agents/        the MCP server agents use
-docs/          the story, the roadmap and the ADRs
+.
+├── terraform/
+│   ├── aks/                  AKS cluster, DNS zone, static IP, Entra ID apps
+│   └── argocd/               installs Argo CD on any cluster, then stops
+├── bootstrap/
+│   └── kind/                 local cluster definition for `make up`
+├── platform/                 everything Argo CD deploys
+│   ├── apps/                 the app-of-apps: one Argo CD Application per component
+│   ├── argocd/               Argo CD's own configuration
+│   ├── apis/
+│   │   ├── database/         Database API: XRD and composition
+│   │   ├── webservice/       WebService API: XRD and composition
+│   │   └── tests/            renders XRs through the real compositions
+│   ├── policies/             Kyverno policies and their test fixtures
+│   ├── gateway/              shared Gateway, TLS and platform routes
+│   └── backstage/            deploys the portal
+├── tenants/                  team-owned config, changed only by pull request
+│   └── billing/
+│       └── invoice-api/      a WebService and its Database
+├── golden-paths/
+│   ├── new-webservice/       Backstage template: new service, optional database
+│   └── new-database/         Backstage template: standalone database
+├── catalog/                  teams, the platform and its APIs, as Backstage entities
+├── portal/                   the Backstage app (built into an image by CI)
+├── agents/
+│   └── platform-mcp/         MCP server agents use to discover and propose changes
+├── scripts/                  CI checks and test helpers, also run by `make`
+├── docs/
+│   ├── adr/                  architecture decision records
+│   ├── story.md              the Fernhill Freight scenario
+│   ├── roadmap.md            phases and changes to the plan
+│   └── agents.md             connecting an agent, and its guardrails
+├── .github/                  CI workflow, CODEOWNERS, Dependabot
+├── Makefile                  entry point for everything above
+└── .mcp.json                 registers the platform MCP server for MCP clients
 ```
 
 ## History
