@@ -61,8 +61,8 @@ credentials live in CI yet.
   2. **Database backups:** CloudNativePG to Blob Storage via workload identity,
      or an Azure Database for PostgreSQL composition behind the same `Database`
      API, which the API was designed for (ADR-0006).
-  3. **Human SSO:** Argo CD and Backstage still use local admin and guest auth.
-     Entra ID for both.
+  3. ~~**Human SSO:**~~ done in [ADR-0018](0018-sso-without-secrets.md): Entra ID
+     for Argo CD and the portal, via workload identity (no client secrets).
   4. **Secrets:** the agent's GitHub App key and any future secrets go to
      Key Vault via External Secrets and workload identity.
   5. **A deployment pipeline** with OIDC federation to Azure, running

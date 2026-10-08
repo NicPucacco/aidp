@@ -39,6 +39,14 @@ output "platform_environment" {
         clientID       = azapi_resource.cert_manager_identity.output.properties.clientId
       }
     }
+    sso = {
+      enabled          = true
+      tenantID         = data.azapi_client_config.current.tenant_id
+      argocdClientID   = azuread_application.sso["argocd"].client_id
+      portalClientID   = azuread_application.sso["portal"].client_id
+      adminsGroupID    = var.sso_admins_group_object_id
+      engineersGroupID = var.sso_engineers_group_object_id
+    }
   }
 }
 

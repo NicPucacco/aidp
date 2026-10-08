@@ -1,0 +1,113 @@
+{{- if .Values.sso.enabled }}
+{{- $sso := .Values.sso }}
+# Entra ID sign-in in front of the portal (ADR-0018). Only members of the
+# engineers or admins groups get through. oauth2-proxy authenticates to Entra
+# with workload identity (no client secret), and its session-cookie key is
+# random per pod and never stored.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: oauth2-proxy
+  namespace: backstage
+  annotations:
+    azure.workload.identity/client-id: {{ required "sso.portalClientID is required" $sso.portalClientID | quote }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: oauth2-proxy
+  namespace: backstage
+  labels:
+    app.kubernetes.io/name: oauth2-proxy
+    platform.fernhill.io/owner: platform
+spec:
+  # One replica: the cookie key is per pod (below). A restart signs everyone
+  # out, and Entra signs them straight back in. Scaling out needs a shared
+  # key from Key Vault (ADR-0018 follow-up).
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: oauth2-proxy
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: oauth2-proxy
+        platform.fernhill.io/owner: platform
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: oauth2-proxy
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+        runAsGroup: 65532
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: cookie-key
+          image: {{ .Values.waitImage }}
+          command: [sh, -c, 'dd if=/dev/urandom of=/keys/cookie bs=32 count=1 2>/dev/null']
+          resources:
+            requests: {cpu: 10m, memory: 8Mi}
+            limits: {memory: 32Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: keys, mountPath: /keys}
+      containers:
+        - name: oauth2-proxy
+          image: {{ .Values.oauth2Proxy.image }}
+          args:
+            - --provider=entra-id
+            - --oidc-issuer-url=https://login.microsoftonline.com/{{ required "sso.tenantID is required" $sso.tenantID }}/v2.0
+            - --client-id={{ $sso.portalClientID }}
+            - --entra-id-federated-token-auth=true
+            - --scope=openid email profile
+            - --allowed-group={{ required "sso.engineersGroupID is required" $sso.engineersGroupID }}
+            - --allowed-group={{ required "sso.adminsGroupID is required" $sso.adminsGroupID }}
+            - --email-domain=*
+            - --redirect-url={{ .Values.baseUrl }}/oauth2/callback
+            - --upstream=http://backstage.backstage.svc:80
+            - --http-address=0.0.0.0:4180
+            - --cookie-secret-file=/keys/cookie
+            - --cookie-secure=true
+            - --skip-provider-button=true
+          ports:
+            - name: http
+              containerPort: 4180
+          resources:
+            requests: {cpu: 10m, memory: 32Mi}
+            limits: {memory: 128Mi}
+          readinessProbe:
+            httpGet: {path: /ping, port: http}
+          livenessProbe:
+            httpGet: {path: /ping, port: http}
+            periodSeconds: 20
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: [ALL]}
+          volumeMounts:
+            - {name: keys, mountPath: /keys, readOnly: true}
+      volumes:
+        - name: keys
+          emptyDir:
+            medium: Memory
+            sizeLimit: 1Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: oauth2-proxy
+  namespace: backstage
+  labels:
+    app.kubernetes.io/name: oauth2-proxy
+spec:
+  selector:
+    app.kubernetes.io/name: oauth2-proxy
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+{{- end }}

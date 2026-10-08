@@ -79,9 +79,8 @@ on. A TCP probe checks the listener is up.
 - Client source IPs are not preserved (`externalTrafficPolicy: Cluster`). Fine
   until a tenant needs them; then switch to `Local` and verify the Cilium
   health-check node port behind Azure's probes.
-- Argo CD and Backstage are now reachable on the internet (behind TLS) but
-  still use local admin and guest auth. **Entra SSO is the next priority**
-  (ADR-0016's follow-ups) before tenants are onboarded.
+- Argo CD and Backstage are reachable on the internet (behind TLS). Entra ID
+  sign-in for both followed in [ADR-0018](0018-sso-without-secrets.md).
 
 ## What would change my mind
 

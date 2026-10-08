@@ -14,6 +14,9 @@ from Git. Neither module touches it.
 ## Production (AKS)
 
 ```bash
+# Needs: Contributor + User Access Administrator on the subscription, and
+# Microsoft Graph Application.ReadWrite.OwnedBy + AppRoleAssignment.ReadWrite.All
+# (Entra app registrations for SSO, ADR-0018).
 az login
 cp terraform/aks/backend.hcl.example terraform/aks/backend.hcl          # state storage
 cp terraform/aks/terraform.tfvars.example terraform/aks/terraform.tfvars # CIDRs, admin group

@@ -88,3 +88,13 @@ variable "acme_email" {
   description = "Contact address for Let's Encrypt (expiry and policy notices)."
   type        = string
 }
+
+variable "sso_admins_group_object_id" {
+  description = "Entra group whose members get Argo CD admin and portal access (the platform team)."
+  type        = string
+}
+
+variable "sso_engineers_group_object_id" {
+  description = "Entra group whose members get read-only Argo CD and portal access (all engineers)."
+  type        = string
+}

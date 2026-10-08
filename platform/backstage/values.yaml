@@ -10,7 +10,20 @@ image:
   tag: "73a6ef2a6f0b6fcf0cab436333f26710714e787f"
 
 # Set by platform/apps from the environment (scheme, base domain, port).
+host: backstage.localhost
 baseUrl: http://backstage.localhost:8000
+
+# Set by platform/apps from environment.sso (ADR-0018). When enabled, every
+# request goes through oauth2-proxy (Entra ID, workload identity) first.
+sso:
+  enabled: false
+  tenantID: ""
+  portalClientID: ""
+  adminsGroupID: ""
+  engineersGroupID: ""
+
+oauth2Proxy:
+  image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.5
 
 waitImage: busybox:1.37.0
 

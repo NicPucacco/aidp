@@ -17,6 +17,42 @@ spec:
         releaseName: argocd
         valueFiles:
           - $values/platform/argocd/values.yaml
+        {{- $env := .Values.environment }}
+        {{- if $env.sso.enabled }}
+        # Entra ID sign-in, per environment (ADR-0018). Workload identity
+        # replaces the client secret: argocd-server's ServiceAccount is
+        # federated with the Argo CD app registration.
+        valuesObject:
+          configs:
+            cm:
+              url: {{ printf "https://argocd.%s" $env.baseDomain | quote }}
+              # No local admin where SSO exists; break-glass is kubectl via
+              # Entra-backed AKS RBAC.
+              admin.enabled: false
+              oidc.config: |
+                name: Microsoft Entra ID
+                issuer: https://login.microsoftonline.com/{{ $env.sso.tenantID }}/v2.0
+                clientID: {{ $env.sso.argocdClientID }}
+                azure:
+                  useWorkloadIdentity: true
+                requestedIDTokenClaims:
+                  groups:
+                    essential: true
+                requestedScopes: [openid, profile, email]
+            rbac:
+              scopes: "[groups]"
+              # Nobody gets anything by default; access is by Entra group.
+              policy.default: ""
+              policy.csv: |
+                g, {{ required "environment.sso.adminsGroupID is required" $env.sso.adminsGroupID }}, role:admin
+                g, {{ required "environment.sso.engineersGroupID is required" $env.sso.engineersGroupID }}, role:readonly
+          server:
+            podLabels:
+              azure.workload.identity/use: "true"
+            serviceAccount:
+              annotations:
+                azure.workload.identity/client-id: {{ required "environment.sso.argocdClientID is required" $env.sso.argocdClientID | quote }}
+        {{- end }}
     - repoURL: {{ .Values.repoURL }}
       targetRevision: {{ .Values.targetRevision }}
       ref: values

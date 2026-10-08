@@ -13,3 +13,7 @@ admin_group_object_ids = ["00000000-0000-0000-0000-000000000000"]
 # The zone the platform serves under; delegate it using the name_servers output.
 base_domain = "platform.fernhill.example"
 acme_email  = "platform-team@fernhill.example"
+
+# SSO (Argo CD + portal), ADR-0018: who's in. Admins get Argo CD admin; engineers read-only.
+sso_admins_group_object_id    = "00000000-0000-0000-0000-000000000000"
+sso_engineers_group_object_id = "00000000-0000-0000-0000-000000000000"
