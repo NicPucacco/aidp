@@ -49,31 +49,22 @@ policy and one CI job.
 
 ## Design decisions
 
-Every significant decision has an ADR in [docs/adr](docs/adr), and each one
-ends with what would make me revisit it. These are the ones I'd point to first:
+Decisions are recorded as ADRs in [docs/adr](docs/adr). Each one covers the
+context, the decision, the alternatives that were considered and why they
+weren't chosen, the consequences, and the conditions under which it should be
+revisited. ADRs aren't rewritten after the fact: when a decision changes, a
+new ADR supersedes the old one, so the history of how the platform got here
+stays readable.
 
-- **Pull requests are the only way in** ([ADR-0001](docs/adr/0001-the-pull-request-is-the-platform-api.md)).
-  People and agents share one audit trail and one set of checks.
-- **Terraform stops once Argo CD is running** ([ADR-0003](docs/adr/0003-terraform-bootstraps-argo-cd-owns-the-rest.md)).
-  After that, Argo CD owns everything on the cluster, including its own upgrades.
-- **Policies run in CI and at admission** ([ADR-0005](docs/adr/0005-kyverno-policies-run-in-ci-and-at-admission.md)).
-  Authors hear about problems before review, and admission catches anything
-  that skipped CI. Namespaces opt in, so existing services don't break on day one.
-- **Tenant folders can only contain platform APIs** ([ADR-0007](docs/adr/0007-tenant-boundary.md)).
-  That keeps the surface an agent can change small and easy to reason about.
-- **Tenant changes are rendered and checked before anyone reviews them**
-  ([ADR-0009](docs/adr/0009-render-and-check-tenant-config-before-review.md)).
-  CI runs each file through the real Crossplane compositions and the real
-  policies, so a reviewer only has to decide whether the change should happen.
-- **Removing an API is a deliberate step** ([ADR-0010](docs/adr/0010-platform-api-lifecycle.md)).
-  I renamed an API once, and Argo CD deleted the old definition and its last
-  instance in the same sync, which deadlocked the cluster. API definitions are
-  no longer deleted automatically.
-- **Agent limits travel with the object** ([ADR-0012](docs/adr/0012-agent-interface.md),
-  [ADR-0013](docs/adr/0013-agent-guardrails.md)). They're enforced in CI and
-  again at admission, so they hold even if CI is bypassed.
-- **Sign-in needs no stored secrets** ([ADR-0018](docs/adr/0018-sso-without-secrets.md)).
-  Argo CD and the portal use Entra ID through workload identity.
+| Area | ADRs |
+|---|---|
+| Workflow and repository | [0001](docs/adr/0001-the-pull-request-is-the-platform-api.md) pull requests as the platform API · [0002](docs/adr/0002-single-repository.md) single repository |
+| Bootstrap and environments | [0003](docs/adr/0003-terraform-bootstraps-argo-cd-owns-the-rest.md) Terraform and Argo CD · [0004](docs/adr/0004-kubernetes-agnostic-local-first.md) Kubernetes-agnostic · [0016](docs/adr/0016-production-runs-on-aks.md) AKS · [0017](docs/adr/0017-ingress-per-environment.md) ingress per environment |
+| Policy | [0005](docs/adr/0005-kyverno-policies-run-in-ci-and-at-admission.md) Kyverno in CI and at admission · [0009](docs/adr/0009-render-and-check-tenant-config-before-review.md) checking tenant changes before review |
+| Platform APIs | [0006](docs/adr/0006-database-api-and-python-compositions.md) Database · [0008](docs/adr/0008-webservice-api.md) WebService · [0010](docs/adr/0010-platform-api-lifecycle.md) API lifecycle · [0014](docs/adr/0014-compositions-are-go-templates.md) Go-template compositions · [0015](docs/adr/0015-why-not-terraform-modules.md) why not Terraform modules |
+| Tenants | [0007](docs/adr/0007-tenant-boundary.md) tenant boundary |
+| Portal and access | [0011](docs/adr/0011-the-portal-is-a-thin-client.md) Backstage · [0018](docs/adr/0018-sso-without-secrets.md) sign-in |
+| Agents | [0012](docs/adr/0012-agent-interface.md) agent interface · [0013](docs/adr/0013-agent-guardrails.md) agent guardrails |
 
 ## Stack
 
