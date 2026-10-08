@@ -12,6 +12,19 @@ spec:
     kind: WebService
   mode: Pipeline
   pipeline:
+    # Loads EnvironmentConfig "platform" (platform/apps/templates/environment.yaml)
+    # into the pipeline context: base domain, URL scheme and port per cluster.
+    - step: environment
+      functionRef:
+        name: function-environment-configs
+      input:
+        apiVersion: environmentconfigs.fn.crossplane.io/v1beta1
+        kind: Input
+        spec:
+          environmentConfigs:
+            - type: Reference
+              ref:
+                name: platform
     - step: compose
       functionRef:
         name: function-go-templating
@@ -29,6 +42,12 @@ spec:
             {{- $replicas := $spec.replicas | default 2 }}
             {{- $healthPath := $spec.healthPath | default "/healthz" }}
             {{- $observed := .observed.resources | default dict }}
+            {{- $env := index .context "apiextensions.crossplane.io/environment" }}
+            {{- /*
+              Single-label hostname (<service>-<team>.<baseDomain>) so one
+              wildcard certificate covers every tenant (ADR-0017).
+            */}}
+            {{- $host := printf "%s-%s.%s" $name $team $env.baseDomain }}
 
             {{- $sizes := dict
                   "small"  (dict "requests" (dict "cpu" "100m" "memory" "128Mi") "limits" (dict "memory" "256Mi"))
@@ -184,7 +203,7 @@ spec:
                 - name: platform
                   namespace: gateway
               hostnames:
-                - {{ $name }}.{{ $team }}.localhost
+                - {{ $host }}
               rules:
                 - backendRefs:
                     - name: {{ $name }}
@@ -195,7 +214,7 @@ spec:
             kind: WebService
             status:
               {{- if $spec.expose }}
-              url: http://{{ $name }}.{{ $team }}.localhost
+              url: {{ $env.scheme }}://{{ $host }}{{ $env.urlPort }}
               {{- end }}
               {{- with $spec.database }}
               databaseSecret: {{ . }}-app

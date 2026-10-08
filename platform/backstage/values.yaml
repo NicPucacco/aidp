@@ -9,6 +9,7 @@ image:
   # so a checked-out tag always runs the portal code it contains (ADR-0011).
   tag: "73a6ef2a6f0b6fcf0cab436333f26710714e787f"
 
+# Set by platform/apps from the environment (scheme, base domain, port).
 baseUrl: http://backstage.localhost:8000
 
 waitImage: busybox:1.37.0

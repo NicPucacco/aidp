@@ -1,0 +1,44 @@
+{{- if .Values.environment.tls.enabled }}
+# Certificates for the Gateway (ADR-0017). Only where TLS is on: locally the
+# Gateway is plain HTTP on *.localhost, and there's nothing to issue.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://charts.jetstack.io
+    chart: cert-manager
+    targetRevision: {{ .Values.versions.certManager }}
+    helm:
+      releaseName: cert-manager
+      valuesObject:
+        crds:
+          enabled: true
+        # Workload identity: the cert-manager ServiceAccount is federated with
+        # a managed identity that can only write TXT records in the DNS zone
+        # (terraform/aks). No DNS credential is stored in the cluster.
+        podLabels:
+          azure.workload.identity/use: "true"
+        serviceAccount:
+          labels:
+            azure.workload.identity/use: "true"
+          annotations:
+            azure.workload.identity/client-id: {{ .Values.environment.tls.azureDNS.clientID | quote }}
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+{{- end }}

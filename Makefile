@@ -50,6 +50,13 @@ aks-plan: ## Plan the AKS cluster (production)
 aks-apply: ## Apply the reviewed AKS plan from aks-plan
 	$(AKS_TF) apply -input=false aks.tfplan
 
+.PHONY: platform-aks
+platform-aks: ## Install the platform onto AKS, with the environment terraform/aks produced
+	@ctx=$$($(AKS_TF) output -raw cluster_name) && \
+	printf '{"platform_environment": %s}\n' "$$($(AKS_TF) output -json platform_environment)" > terraform/argocd/aks.tfvars.json && \
+	$(TF) init -input=false && \
+	$(TF) apply -input=false -auto-approve -var kube_context=$$ctx -var target_revision=$(TARGET_REVISION) -var-file=aks.tfvars.json
+
 .PHONY: aks-test
 aks-test: ## Offline plan tests for the AKS module (mocked providers, no Azure access)
 	$(AKS_TF) init -backend=false -input=false >/dev/null

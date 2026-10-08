@@ -11,3 +11,32 @@ versions:
   kyverno: 3.9.1
   envoyGateway: 1.9.2
   cloudnativePg: 0.29.1
+  certManager: v1.21.2
+
+# Everything that differs between clusters (ADR-0004, ADR-0017). Defaults are
+# the local kind cluster. On AKS, terraform/aks outputs this whole object and
+# terraform/argocd passes it through, so no environment-specific values are
+# committed to Git.
+environment:
+  name: local
+  # Hostnames are <name>.<baseDomain>; tenant services are
+  # <service>-<team>.<baseDomain> (single label, so one wildcard cert covers them).
+  baseDomain: localhost
+  # Appended to URLs shown to people (status, portal). Locally the Gateway is
+  # reached through `make gateway` on :8000.
+  urlPort: ":8000"
+  gateway:
+    serviceType: ClusterIP
+    # AKS only: the static public IP Terraform created, and its resource group.
+    ipv4: ""
+    resourceGroup: ""
+  tls:
+    enabled: false
+    acmeEmail: ""
+    acmeServer: https://acme-v02.api.letsencrypt.org/directory
+    # Let's Encrypt DNS-01 through Azure DNS, authenticated by workload identity.
+    azureDNS:
+      subscriptionID: ""
+      resourceGroup: ""
+      zone: ""
+      clientID: ""

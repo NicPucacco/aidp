@@ -5,7 +5,7 @@ nothing else (ADR-0003, ADR-0016).
 
 | Module | Owns | Changes | State |
 |---|---|---|---|
-| [`aks/`](aks) | The production AKS cluster: resource group, network, identity, logging | Rarely (cluster upgrades, node pool sizing) | Azure Storage (`backend.hcl`) |
+| [`aks/`](aks) | The production AKS cluster and its edge: resource group, network, identity, logging, Gateway IP, DNS zone, cert-manager identity | Rarely (cluster upgrades, node pool sizing) | Azure Storage (`backend.hcl`) |
 | [`argocd/`](argocd) | Day 0 on *any* cluster: installs Argo CD and the root app, then stops | Almost never; Argo CD manages itself after | Local, or a backend per cluster |
 
 Everything *on* the cluster after day 0 is Argo CD reconciling `platform/`
@@ -20,10 +20,17 @@ cp terraform/aks/terraform.tfvars.example terraform/aks/terraform.tfvars # CIDRs
 make aks-plan      # review the plan
 make aks-apply     # apply exactly what was reviewed
 
+# One-time: delegate base_domain from its parent zone to these name servers.
+terraform -chdir=terraform/aks output name_servers
+
 az aks get-credentials -g rg-fernhill-prod -n aks-fernhill-prod
 kubelogin convert-kubeconfig -l azurecli
-make platform KUBE_CONTEXT=aks-fernhill-prod
+make platform-aks  # passes terraform/aks's platform_environment to Argo CD
 ```
+
+`platform_environment` is the one object that makes the same `platform/`
+behave differently on AKS: domain, the Gateway's static IP, and TLS settings
+(ADR-0017). It's generated, never committed.
 
 ## Local (kind)
 

@@ -21,11 +21,11 @@ pf=$!
 trap 'kill $pf 2>/dev/null || true' EXIT
 
 for _ in $(seq 1 30); do
-  body=$(curl -fsS -H 'Host: invoice-api.billing.localhost' http://127.0.0.1:18000/ 2>/dev/null) && break
+  body=$(curl -fsS -H 'Host: invoice-api-billing.localhost' http://127.0.0.1:18000/ 2>/dev/null) && break
   sleep 2
 done
 if ! grep -q 'Fernhill Billing' <<<"${body:-}"; then
   echo "Gateway route didn't return the app. Body: ${body:-<none>}" >&2
   exit 1
 fi
-echo "✓ http://invoice-api.billing.localhost served through the platform Gateway"
+echo "✓ http://invoice-api-billing.localhost served through the platform Gateway"

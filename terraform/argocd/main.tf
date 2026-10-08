@@ -54,10 +54,15 @@ resource "helm_release" "root_app" {
           # Child apps track the same repo and revision as the root, so a
           # PR's CI run tests the PR's whole tree, not main's children.
           helm = {
-            valuesObject = {
-              repoURL        = var.repo_url
-              targetRevision = var.target_revision
-            }
+            # environment: null keeps the chart's local (kind) defaults; on
+            # AKS it's terraform/aks's platform_environment output (ADR-0017).
+            valuesObject = merge(
+              {
+                repoURL        = var.repo_url
+                targetRevision = var.target_revision
+              },
+              { for k, v in { environment = var.platform_environment } : k => v if v != null },
+            )
           }
         }
         destination = {

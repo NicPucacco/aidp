@@ -1,0 +1,14 @@
+# The environment, as data compositions can read (function-environment-configs).
+# Wave 1: the EnvironmentConfig CRD is installed by Crossplane (wave 0).
+apiVersion: apiextensions.crossplane.io/v1beta1
+kind: EnvironmentConfig
+metadata:
+  name: platform
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+data:
+  name: {{ .Values.environment.name }}
+  baseDomain: {{ .Values.environment.baseDomain }}
+  urlPort: {{ .Values.environment.urlPort | quote }}
+  scheme: {{ ternary "https" "http" .Values.environment.tls.enabled }}

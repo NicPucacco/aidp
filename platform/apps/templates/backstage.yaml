@@ -18,6 +18,8 @@ spec:
       valuesObject:
         repoURL: {{ .Values.repoURL }}
         targetRevision: {{ .Values.targetRevision }}
+        {{- $env := .Values.environment }}
+        baseUrl: {{ printf "%s://backstage.%s%s" (ternary "https" "http" $env.tls.enabled) $env.baseDomain $env.urlPort | quote }}
   destination:
     server: https://kubernetes.default.svc
     namespace: backstage

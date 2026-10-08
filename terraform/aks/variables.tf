@@ -78,3 +78,13 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "base_domain" {
+  description = "DNS zone the platform serves under, e.g. platform.fernhill.example. Hosts are <name>.<base_domain>. Delegate it from the parent zone using the name_servers output."
+  type        = string
+}
+
+variable "acme_email" {
+  description = "Contact address for Let's Encrypt (expiry and policy notices)."
+  type        = string
+}

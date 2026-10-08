@@ -183,7 +183,7 @@ spec:
                       default: /healthz
                     expose:
                       type: boolean
-                      description: Route traffic from the platform Gateway at <name>.<team>.localhost.
+                      description: Route traffic from the platform Gateway at <name>-<team>.<baseDomain> (e.g. invoice-api-billing.localhost locally).
                       default: false
                     database:
                       type: string

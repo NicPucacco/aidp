@@ -21,5 +21,6 @@ dist-types/
 
 # Terraform inputs/backends with real values stay local
 *.tfvars
+*.tfvars.json
 !*.tfvars.example
 backend.hcl
