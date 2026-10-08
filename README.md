@@ -1,28 +1,25 @@
-# aidp: from Internal Developer Platform to Agentic Developer Platform
-
-A working, locally runnable platform that shows how I'd build an IDP for a
-mid-sized engineering org, and then extend it so **AI agents become accountable
-users of the platform alongside developers**, without building a second platform for them.
+# aidp
 
 [![ci](https://github.com/NicPucacco/aidp/actions/workflows/ci.yaml/badge.svg)](https://github.com/NicPucacco/aidp/actions/workflows/ci.yaml)
 
-> **Short on time?** Read [the one idea](#the-one-idea), skim
-> [the decisions table](#decisions-id-defend-in-an-interview), and look at the
-> [roadmap](docs/roadmap.md). That covers most of it in about 5 minutes.
+This repo is an internal developer platform I built to show how I'd approach
+one for a mid-sized engineering org, and what changes once AI coding agents
+start using it alongside people.
 
----
+It's set at a made-up company, [Fernhill Freight](docs/story.md): around 60
+engineers, 14 services, and a platform team of four. They have the usual
+problems. A new database means a ticket and about a week of waiting. Every
+team deploys its services differently. More recently, coding agents have
+started opening PRs full of Kubernetes YAML that looks right and often isn't,
+and nobody can easily tell who, or what, wrote it.
 
-## The problem
+## How it works
 
-[Fernhill Freight](docs/story.md) (fictional company, real problems) has 60 engineers, 14
-services, and a 4-person platform team. Getting a database takes **five days**.
-Services are deployed **fourteen different ways**. And since engineers started
-using coding agents, plausible-looking but wrong infrastructure YAML has been
-showing up in PRs, and **nobody can tell who, or what, wrote it.**
-
-## The one idea
-
-**The pull request is the platform API.** ([ADR-0001](docs/adr/0001-the-pull-request-is-the-platform-api.md))
+Every change goes through a pull request. Developers can open one from a
+Backstage template, an agent can open one through the platform's MCP server,
+or anyone can write the YAML by hand. All of them go through the same CI
+checks and the same human review, and then Argo CD applies the change. No
+person or agent has credentials that write to the cluster directly.
 
 ```mermaid
 flowchart LR
@@ -30,126 +27,155 @@ flowchart LR
     agent([AI agent]) --> mcp[Platform MCP server]
     bs --> pr{{Pull request}}
     mcp --> pr
-    pr --> ci[CI gates<br/>schema · Kyverno · agent policy]
-    ci --> review[Human review<br/>CODEOWNERS]
+    pr --> ci[CI checks<br/>render · Kyverno · agent rules]
+    ci --> review[Human review]
     review --> argo[Argo CD]
     argo --> adm[Kyverno admission]
-    adm --> xp[Crossplane APIs<br/>Service · Database]
-    adm --> wl[Workloads]
+    adm --> xp[Crossplane<br/>WebService · Database]
 ```
 
-Developers and agents reach the same contract through different front ends.
-Neither has credentials that write to a cluster. Agents are *distinguished*
-(their own identity, label, and stricter policy), not *separated* (no parallel
-approval system). That's what makes the agentic layer thin: the IDP → ADP
-transition adds an interface and some policy, not a second platform.
+Teams don't write Deployments or Postgres manifests. They ask for a
+`WebService` or a `Database`, about ten lines of YAML each, and Crossplane
+turns that into the real resources with the platform's defaults: probes,
+resource limits, non-root containers, a route on the shared gateway, a
+database secret the service can reference. Kyverno checks the result in CI
+and again at admission.
 
-## Decisions I'd defend in an interview
+Agents go through exactly the same path. Their PRs come from a separate
+GitHub App identity, the objects they create are annotated as agent-requested,
+and a few extra limits apply to them, such as no large databases. Supporting
+agents needed much less new machinery than I expected: an interface, one
+policy and one CI job.
 
-| Decision | Why | ADR |
-|---|---|---|
-| Every change is a PR; nothing else writes to the cluster | One audit trail and one policy set for humans and agents | [0001](docs/adr/0001-the-pull-request-is-the-platform-api.md) |
-| One repo, split by directory + CODEOWNERS | Right for a 4-person team. The ADR lists the signals that would justify splitting | [0002](docs/adr/0002-single-repository.md) |
-| Terraform bootstraps Argo CD, then stops | Exactly one owner per resource; no Terraform/Argo drift fights | [0003](docs/adr/0003-terraform-bootstraps-argo-cd-owns-the-rest.md) |
-| Target the Kubernetes API, not a distribution | Runs on kind, k3d, EKS, GKE… and lets CI test what reviewers run | [0004](docs/adr/0004-kubernetes-agnostic-local-first.md) |
-| Same Kyverno policies in CI and at admission; enforcement is opt-in per namespace | Authors (human or agent) get feedback before review; legacy services aren't broken on day one | [0005](docs/adr/0005-kyverno-policies-run-in-ci-and-at-admission.md) |
-| Databases are requested by t-shirt size; compositions are Go templates, tested by rendering real XRs | Tenants state intent, the platform owns what "small" means, and the logic is testable | [0006](docs/adr/0006-database-api-and-python-compositions.md) |
-| Tenant directories may only contain platform API objects; the platform owns namespaces and labels | Small, explicit API surface. Matters most once agents can write to it | [0007](docs/adr/0007-tenant-boundary.md) |
-| Probes, limits, non-root, PDBs, routing: decided once in the WebService composition | 14 services stop being deployed 14 ways; compliant by construction | [0008](docs/adr/0008-webservice-api.md) |
-| Tenant PRs are rendered through real compositions and policy-checked in CI | Reviewers judge intent, not YAML. The gate agent PRs will rely on | [0009](docs/adr/0009-render-and-check-tenant-config-before-review.md) |
-| XRDs are never pruned; breaking API changes go add → migrate → remove | Learned the hard way: a rename deadlocked the platform | [0010](docs/adr/0010-platform-api-lifecycle.md) |
-| The portal reads Git and writes only PRs; its image is tagged by content hash | Discoverability without a second write path; every commit knows its exact portal | [0011](docs/adr/0011-the-portal-is-a-thin-client.md) |
-| Agents get an MCP server whose only write is a PR, as their own GitHub App identity | Same golden paths as humans, attributable by construction; no new control plane | [0012](docs/adr/0012-agent-interface.md) |
-| Agent guardrails are layered; limits follow *who asked*, stamped on the object | No single layer trusted; limits survive from PR to admission | [0013](docs/adr/0013-agent-guardrails.md) |
-| Production runs on AKS via the Azure Verified Module, in its own Terraform state | Secure defaults are explicit inputs; the cluster's lifecycle is separate from Argo CD's bootstrap; still runs on kind | [0016](docs/adr/0016-production-runs-on-aks.md) |
-| One Gateway definition; Terraform supplies domain, static IP and TLS settings per environment | No forked `platform/`, no environment values in Git; one wildcard cert covers every tenant | [0017](docs/adr/0017-ingress-per-environment.md) |
-| Entra ID sign-in for Argo CD and the portal via workload identity: no client secrets anywhere | Nothing to rotate or leak; Entra decides who gets in before either app sees a request | [0018](docs/adr/0018-sso-without-secrets.md) |
-| Compositions are Go templates, tested by rendering real XRs | The team's existing idiom (Helm); one artifact to review; the API didn't change when the engine did | [0014](docs/adr/0014-compositions-are-go-templates.md) |
+## Design decisions
 
-More ADRs are added as each phase lands. Every ADR ends with **"What would
-change my mind"**, because a decision with no exit criteria is just a preference.
+Decisions are recorded as ADRs in [docs/adr](docs/adr). Each one covers the
+context, the decision, the alternatives that were considered and why they
+weren't chosen, the consequences, and the conditions under which it should be
+revisited. ADRs aren't rewritten after the fact: when a decision changes, a
+new ADR supersedes the old one, so the history of how the platform got here
+stays readable.
+
+| Area | ADRs |
+|---|---|
+| Workflow and repository | [0001](docs/adr/0001-the-pull-request-is-the-platform-api.md) pull requests as the platform API · [0002](docs/adr/0002-single-repository.md) single repository |
+| Bootstrap and environments | [0003](docs/adr/0003-terraform-bootstraps-argo-cd-owns-the-rest.md) Terraform and Argo CD · [0004](docs/adr/0004-kubernetes-agnostic-local-first.md) Kubernetes-agnostic · [0016](docs/adr/0016-production-runs-on-aks.md) AKS · [0017](docs/adr/0017-ingress-per-environment.md) ingress per environment |
+| Policy | [0005](docs/adr/0005-kyverno-policies-run-in-ci-and-at-admission.md) Kyverno in CI and at admission · [0009](docs/adr/0009-render-and-check-tenant-config-before-review.md) checking tenant changes before review |
+| Platform APIs | [0006](docs/adr/0006-database-api-and-python-compositions.md) Database · [0008](docs/adr/0008-webservice-api.md) WebService · [0010](docs/adr/0010-platform-api-lifecycle.md) API lifecycle · [0014](docs/adr/0014-compositions-are-go-templates.md) Go-template compositions · [0015](docs/adr/0015-why-not-terraform-modules.md) why not Terraform modules |
+| Tenants | [0007](docs/adr/0007-tenant-boundary.md) tenant boundary |
+| Portal and access | [0011](docs/adr/0011-the-portal-is-a-thin-client.md) Backstage · [0018](docs/adr/0018-sso-without-secrets.md) sign-in |
+| Agents | [0012](docs/adr/0012-agent-interface.md) agent interface · [0013](docs/adr/0013-agent-guardrails.md) agent guardrails |
 
 ## Stack
 
-| Concern | Choice |
+| | |
 |---|---|
-| Bootstrap | Terraform (Helm provider only) |
-| GitOps | Argo CD (app-of-apps, ApplicationSets) |
-| Platform APIs | Crossplane v2, `function-go-templating` compositions |
-| Policy | Kyverno, the same policies run in CI and at admission |
-| Ingress | Gateway API (Envoy Gateway) |
+| GitOps | Argo CD, bootstrapped by Terraform |
+| Platform APIs | Crossplane v2 with Go-template compositions |
+| Policy | Kyverno |
+| Ingress | Gateway API (Envoy Gateway), cert-manager on Azure |
+| Databases | CloudNativePG |
 | Portal | Backstage |
-| Agent interface | Python MCP server, PR-only GitHub App identity |
-| CI | GitHub Actions, including a full bootstrap on kind for every PR |
+| Agents | A Python MCP server that can only open pull requests |
+| Production | AKS, using the Azure Verified Module |
+| CI | GitHub Actions, including a full install on kind for every PR |
 
-## Run it
+## Running it locally
 
-Requirements: Docker, kubectl, Terraform, kind. Run `make doctor` to check.
-
-**Resources, honestly:** the full platform (Argo CD, Crossplane, Kyverno,
-Envoy Gateway, CloudNativePG, Backstage, and two Postgres instances) is a lot
-of control plane for one node. It converges in about 7 minutes on a GitHub
-Actions runner (4 vCPU, 16 GB), which CI proves on every PR. Plan for
-**4+ CPUs and 12 GB of memory for Docker**. On an 8 GB Docker VM it ran fine
-through v3, then thrashed once the portal was added: API server and etcd
-CPU-bound, controllers losing leader election.
+You'll need Docker, kubectl, Terraform and kind; `make doctor` checks for
+them. Give Docker at least 4 CPUs and 12 GB of memory. The whole stack is a lot
+of control plane for a single node: on an 8 GB Docker VM it was fine until I
+added Backstage, after which etcd and the API server couldn't keep up. CI runs
+the same setup on a standard GitHub runner for every PR, and it comes up in
+about seven minutes.
 
 ```bash
-make up         # kind cluster + Terraform bootstrap, then waits for Argo CD to converge
-make gateway    # Argo CD via the platform Gateway at http://argocd.localhost:8000
-make password   # admin password
-make test       # unit + tenant render/policy checks, then live checks (admission, database, gateway)
-make down       # tear it all down
+make up         # create a kind cluster, install Argo CD, wait for the platform
+make gateway    # port-forward the gateway; Argo CD is at http://argocd.localhost:8000
+make password   # Argo CD admin password
+make test       # unit tests, render and policy checks, then checks against the cluster
+make down       # delete the cluster
 ```
 
-Then look at the golden paths working. Billing's entire footprint is two
-small files: a [Database](tenants/billing/invoice-api/database.yaml) and a
-[WebService](tenants/billing/invoice-api/webservice.yaml) bound to it.
+Once it's up, Billing's service and its database are running from two short
+files, [database.yaml](tenants/billing/invoice-api/database.yaml) and
+[webservice.yaml](tenants/billing/invoice-api/webservice.yaml):
 
 ```bash
-kubectl -n billing get databases,webservices   # both READY True
-make gateway                                   # then open http://invoice-api-billing.localhost:8000
+kubectl -n billing get databases,webservices
 ```
 
-The portal is at http://backstage.localhost:8000 (also via `make gateway`):
-the catalog, the teams, and the two golden paths. Templates open real PRs
-once you run `make portal-token`. Without it you can still dry-run them.
+With `make gateway` running, the service is at http://invoice-api-billing.localhost:8000
+and the portal at http://backstage.localhost:8000. The portal's templates can
+open real PRs after `make portal-token`; without it you can still dry-run them.
 
-**Production runs on AKS:** see [terraform/README.md](terraform/README.md)
-(`make aks-plan`, `make aks-apply`, then `make platform-aks`). On AKS everything is
-served over HTTPS under your domain; locally it's `*.localhost` via `make gateway`.
-
-Already have a cluster? Skip kind:
+To install onto a cluster you already have instead of kind:
 
 ```bash
 make platform KUBE_CONTEXT=my-context
 ```
 
+## Running on Azure
+
+Production is meant to run on AKS. The Terraform for the cluster, its DNS
+zone and static IP, and the Entra ID setup is in [terraform/](terraform/README.md).
+I haven't applied it to a real subscription yet. It's validated and tested
+offline against mocked providers, and CI renders the platform's charts in
+their Azure configuration on every PR.
+
 ## Agents
 
-Open this repo in Claude Code (or any MCP client) after `make agent-setup`,
-and ask for infrastructure in plain language. The agent discovers the golden
-paths, validates a proposal, and opens a PR as `aidp-agent[bot]`, which then
-goes through the same CI and human review as everyone else. Without GitHub
-credentials it runs in dry-run mode. See [docs/agents.md](docs/agents.md).
+Run `make agent-setup`, then open the repo in Claude Code or another MCP
+client and ask for what you need in plain language. The agent can look up
+teams, golden paths and API schemas, check its proposal, and open a PR as
+`aidp-agent[bot]`. That PR then goes through the same checks and review as
+any other. Without GitHub credentials it stops at a dry run.
+[docs/agents.md](docs/agents.md) covers the setup and the guardrails.
 
-## Repository map
+## Repository layout
 
 ```
-terraform/     aks/: the production AKS cluster · argocd/: day-0 Argo CD bootstrap on any cluster
-bootstrap/     kind/: the local cluster definition used by `make up`
-platform/      Platform team: Argo apps, Crossplane APIs, Kyverno policies, portal deploy
-tenants/       Developers + agents: one directory per team and service (PR-only)
-golden-paths/  Backstage templates: generate tenant files, open a PR
-catalog/       Teams, the platform system, and its APIs, as Backstage entities
-portal/        The Backstage app (built in CI, tagged by content hash)
-agents/        The platform MCP server: agents discover and propose, via PR only
-docs/          Story, roadmap, ADRs
-.github/      CI, CODEOWNERS
+.
+├── terraform/
+│   ├── aks/                  AKS cluster, DNS zone, static IP, Entra ID apps
+│   └── argocd/               installs Argo CD on any cluster, then stops
+├── bootstrap/
+│   └── kind/                 local cluster definition for `make up`
+├── platform/                 everything Argo CD deploys
+│   ├── apps/                 the app-of-apps: one Argo CD Application per component
+│   ├── argocd/               Argo CD's own configuration
+│   ├── apis/
+│   │   ├── database/         Database API: XRD and composition
+│   │   ├── webservice/       WebService API: XRD and composition
+│   │   └── tests/            renders XRs through the real compositions
+│   ├── policies/             Kyverno policies and their test fixtures
+│   ├── gateway/              shared Gateway, TLS and platform routes
+│   └── backstage/            deploys the portal
+├── tenants/                  team-owned config, changed only by pull request
+│   └── billing/
+│       └── invoice-api/      a WebService and its Database
+├── golden-paths/
+│   ├── new-webservice/       Backstage template: new service, optional database
+│   └── new-database/         Backstage template: standalone database
+├── catalog/                  teams, the platform and its APIs, as Backstage entities
+├── portal/                   the Backstage app (built into an image by CI)
+├── agents/
+│   └── platform-mcp/         MCP server agents use to discover and propose changes
+├── scripts/                  CI checks and test helpers, also run by `make`
+├── docs/
+│   ├── adr/                  architecture decision records
+│   ├── story.md              the Fernhill Freight scenario
+│   ├── roadmap.md            phases and changes to the plan
+│   └── agents.md             connecting an agent, and its guardrails
+├── .github/                  CI workflow, CODEOWNERS, Dependabot
+├── Makefile                  entry point for everything above
+└── .mcp.json                 registers the platform MCP server for MCP clients
 ```
 
-## Following the evolution
+## History
 
-Each phase is a git tag, and the [roadmap](docs/roadmap.md) explains the sequencing.
-Running `git checkout v2-database-path && make up` gives you the platform as it was
-at that point.
+The platform was built in phases, each tagged from `v0-foundations` to
+`v5-agentic`, and later changes landed as pull requests that describe what
+went wrong along the way. The [roadmap](docs/roadmap.md) explains the order.
+To see the platform as it was at a particular point, check out a tag and run
+`make up`, for example `git checkout v2-database-path && make up`.
