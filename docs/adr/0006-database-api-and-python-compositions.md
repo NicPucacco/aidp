@@ -69,7 +69,7 @@ The logic lives in `platform/apis/database/compose.py` and runs on
 | A packaged Python function (own image, own xpkg) | The right end state, but it needs an image pipeline, a registry, and package versioning before there's a second API to justify it. The generator keeps the source testable today, and moving to a packaged function later only changes the delivery, not the code. |
 | Inline script edited directly in the Composition | Untestable, and a YAML block scalar is a terrible code editor. |
 | Expose CloudNativePG `Cluster` directly to tenants | Couples every tenant to one operator's schema. The cloud story ends there, and so does the platform team's ability to change defaults. |
-| Terraform modules triggered from CI | That's the current five-day process with better tooling. It also gives no continuous reconciliation, so drift goes unnoticed. |
+| Terraform modules triggered from CI | No continuous reconciliation, so drift goes unnoticed, and no status API to bind to. The stronger reason, that `plan` runs author-controlled code with credentials, became decisive with agent authors in v5: see [ADR-0012](0012-why-not-terraform-modules.md). |
 
 ## Consequences
 

@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "fernhill-platform": {
+      "command": "agents/platform-mcp/.venv/bin/fernhill-platform-mcp",
+      "env": {
+        "FERNHILL_AGENT_NAME": "${FERNHILL_AGENT_NAME:-claude-code}",
+        "GITHUB_APP_ID": "${GITHUB_APP_ID:-}",
+        "GITHUB_APP_INSTALLATION_ID": "${GITHUB_APP_INSTALLATION_ID:-}",
+        "GITHUB_APP_PRIVATE_KEY_PATH": "${GITHUB_APP_PRIVATE_KEY_PATH:-}"
+      }
+    }
+  }
+}

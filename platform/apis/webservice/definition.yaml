@@ -10,7 +10,7 @@ metadata:
     # An API is never removed as a side effect of a sync or of deleting the
     # Argo CD app: Crossplane stops reconciling XRs once their XRD goes, which
     # strands every instance (and, for Database, its data). Removal is a
-    # deliberate step once no instances remain. See ADR-0008.
+    # deliberate step once no instances remain. See ADR-0010.
     argocd.argoproj.io/sync-options: Prune=false,Delete=false
 spec:
   scope: Namespaced

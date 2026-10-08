@@ -7,6 +7,7 @@ policies:
   - ../require-resources.yaml
   - ../require-pinned-images.yaml
   - ../require-probes.yaml
+  - ../agent-limits.yaml
 # One object per file so scripts/e2e-admission.sh can replay each fixture
 # against the live cluster and expect the same verdict.
 resources:
@@ -14,6 +15,10 @@ resources:
   - resources/noncompliant.yaml
   - resources/registry-port-no-tag.yaml
   - resources/legacy-app.yaml
+  - resources/agent-large-database.yaml
+  - resources/agent-small-database.yaml
+  - resources/human-large-database.yaml
+  - resources/agent-many-replicas.yaml
 variables: values.yaml
 results:
   - policy: require-ownership
@@ -71,4 +76,26 @@ results:
     isValidatingPolicy: true
     kind: Deployment
     resources: [legacy/legacy-app]
+    result: skip
+
+  # Agent limits apply only to objects an agent asked for (ADR-0013).
+  - policy: agent-limits
+    isValidatingPolicy: true
+    kind: Database
+    resources: [billing/agent-small-database]
+    result: pass
+  - policy: agent-limits
+    isValidatingPolicy: true
+    kind: Database
+    resources: [billing/agent-large-database]
+    result: fail
+  - policy: agent-limits
+    isValidatingPolicy: true
+    kind: WebService
+    resources: [billing/agent-many-replicas]
+    result: fail
+  - policy: agent-limits
+    isValidatingPolicy: true
+    kind: Database
+    resources: [billing/human-large-database]
     result: skip

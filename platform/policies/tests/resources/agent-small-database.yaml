@@ -1,0 +1,9 @@
+apiVersion: platform.fernhill.io/v1alpha1
+kind: Database
+metadata:
+  name: agent-small-database
+  namespace: billing
+  annotations:
+    platform.fernhill.io/requested-by: agent:claude-code
+spec:
+  size: small

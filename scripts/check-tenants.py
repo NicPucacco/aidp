@@ -6,7 +6,7 @@ For every file under tenants/<team>/:
      metadata.namespace (the platform decides the namespace).
   2. Render each object through its real Composition with `crossplane render`
      (runs the same function-python package the cluster runs).
-  3. Evaluate the rendered resources against the real Kyverno policies, with
+  3. Evaluate the XRs and their rendered resources against the real Kyverno policies, with
      each team namespace labelled the way the ApplicationSet labels it.
 
 This is what makes a tenant PR, from a human or an agent, cheap to review:
@@ -75,7 +75,9 @@ def render(team, doc, workdir):
     if proc.returncode != 0:
         raise RenderError(f"{doc['kind']} {team}/{doc['metadata']['name']} failed to render:\n{proc.stderr.strip()}")
     out = proc.stdout
-    rendered = []
+    # The XR itself is checked too: some policies (agent-limits) apply to
+    # what the tenant asked for, not to what it composes into.
+    rendered = [xr]
     for obj in yaml.safe_load_all(out):
         if not obj or obj.get("apiVersion", "").startswith(GROUP) or obj.get("kind") == "Result":
             continue

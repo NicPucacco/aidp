@@ -1,0 +1,10 @@
+apiVersion: platform.fernhill.io/v1alpha1
+kind: WebService
+metadata:
+  name: agent-many-replicas
+  namespace: billing
+  annotations:
+    platform.fernhill.io/requested-by: agent:claude-code
+spec:
+  image: ghcr.io/fernhill/invoice-api:1.4.2
+  replicas: 5

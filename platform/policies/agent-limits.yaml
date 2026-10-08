@@ -1,0 +1,39 @@
+# Agents may request infrastructure, within limits a human doesn't have
+# (ADR-0013). Objects proposed through the platform MCP server carry
+# platform.fernhill.io/requested-by: agent:<name>; anything bigger than these
+# limits needs a human to open the PR. The MCP server checks the same limits
+# for fast feedback, but this policy is the authority.
+apiVersion: policies.kyverno.io/v1
+kind: ValidatingPolicy
+metadata:
+  name: agent-limits
+  annotations:
+    policies.kyverno.io/title: Limits on agent-requested resources
+    policies.kyverno.io/category: Fernhill agents
+spec:
+  validationActions: [Deny]
+  matchConstraints:
+    namespaceSelector:
+      matchLabels:
+        platform.fernhill.io/managed: "true"
+    resourceRules:
+      - apiGroups: [platform.fernhill.io]
+        apiVersions: [v1alpha1]
+        operations: [CREATE, UPDATE]
+        resources: [databases, webservices]
+  matchConditions:
+    - name: requested-by-agent
+      expression: >-
+        object.metadata.?annotations[?'platform.fernhill.io/requested-by']
+        .orValue('').startsWith('agent:')
+  validations:
+    - expression: object.spec.?size.orValue('small') != 'large'
+      messageExpression: >-
+        object.kind + ' ' + object.metadata.name + ' was requested by an agent
+        and asks for size large; agents can request at most medium. A human
+        must open this request.'
+    - expression: object.spec.?replicas.orValue(1) <= 3
+      messageExpression: >-
+        object.kind + ' ' + object.metadata.name + ' was requested by an agent
+        and asks for ' + string(object.spec.replicas) + ' replicas; agents can
+        request at most 3.'

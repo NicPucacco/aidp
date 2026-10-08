@@ -57,6 +57,17 @@ portal-token: ## Let golden-path templates open real PRs (uses GITHUB_TOKEN or y
 		--from-literal=token="$$token" --dry-run=client -o yaml | kubectl --context $(KUBE_CONTEXT) apply -f -; \
 	kubectl --context $(KUBE_CONTEXT) -n backstage rollout restart deploy/backstage
 
+.PHONY: agent-setup
+agent-setup: ## Install the platform MCP server for .mcp.json (Claude Code and other MCP clients)
+	python3 -m venv agents/platform-mcp/.venv
+	agents/platform-mcp/.venv/bin/pip install -q -e 'agents/platform-mcp[test]'
+	@echo "Ready. Open this repo in an MCP client; see docs/agents.md for PR identity setup."
+
+.PHONY: test-agents
+test-agents: ## MCP server unit tests, then agent proposals through the tenant gate
+	agents/platform-mcp/.venv/bin/pytest -q agents/platform-mcp
+	PATH=agents/platform-mcp/.venv/bin:$$PATH scripts/test-agent-proposals.py
+
 .PHONY: password
 password: ## Print the initial Argo CD admin password
 	@kubectl --context $(KUBE_CONTEXT) -n argocd get secret argocd-initial-admin-secret \
@@ -97,7 +108,7 @@ test-templates: ## Render golden-path templates and run the output through the t
 	scripts/test-templates.py
 
 .PHONY: test
-test: test-apis check-tenants test-templates ## All tests: unit, tenant render+policy, then live-cluster checks
+test: test-apis check-tenants test-templates test-agents ## All tests: unit, tenant render+policy, then live-cluster checks
 	kyverno test platform/policies/tests --detailed-results
 	KUBE_CONTEXT=$(KUBE_CONTEXT) scripts/e2e-admission.sh
 	KUBE_CONTEXT=$(KUBE_CONTEXT) scripts/e2e-database.sh
