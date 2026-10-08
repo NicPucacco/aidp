@@ -61,6 +61,7 @@ transition adds an interface and some policy, not a second platform.
 | The portal reads Git and writes only PRs; its image is tagged by content hash | Discoverability without a second write path; every commit knows its exact portal | [0011](docs/adr/0011-the-portal-is-a-thin-client.md) |
 | Agents get an MCP server whose only write is a PR, as their own GitHub App identity | Same golden paths as humans, attributable by construction; no new control plane | [0012](docs/adr/0012-agent-interface.md) |
 | Agent guardrails are layered; limits follow *who asked*, stamped on the object | No single layer trusted; limits survive from PR to admission | [0013](docs/adr/0013-agent-guardrails.md) |
+| Production runs on AKS via the Azure Verified Module, in its own Terraform state | Secure defaults are explicit inputs; the cluster's lifecycle is separate from Argo CD's bootstrap; still runs on kind | [0016](docs/adr/0016-production-runs-on-aks.md) |
 | Compositions are Go templates, tested by rendering real XRs | The team's existing idiom (Helm); one artifact to review; the API didn't change when the engine did | [0014](docs/adr/0014-compositions-are-go-templates.md) |
 
 More ADRs are added as each phase lands. Every ADR ends with **"What would
@@ -112,6 +113,9 @@ The portal is at http://backstage.localhost:8000 (also via `make gateway`):
 the catalog, the teams, and the two golden paths. Templates open real PRs
 once you run `make portal-token`. Without it you can still dry-run them.
 
+**Production runs on AKS:** see [terraform/README.md](terraform/README.md)
+(`make aks-plan`, `make aks-apply`, then `make platform` against the AKS context).
+
 Already have a cluster? Skip kind:
 
 ```bash
@@ -129,7 +133,8 @@ credentials it runs in dry-run mode. See [docs/agents.md](docs/agents.md).
 ## Repository map
 
 ```
-bootstrap/     Day 0: Terraform that installs Argo CD on any cluster
+terraform/     aks/: the production AKS cluster · argocd/: day-0 Argo CD bootstrap on any cluster
+bootstrap/     kind/: the local cluster definition used by `make up`
 platform/      Platform team: Argo apps, Crossplane APIs, Kyverno policies, portal deploy
 tenants/       Developers + agents: one directory per team and service (PR-only)
 golden-paths/  Backstage templates: generate tenant files, open a PR

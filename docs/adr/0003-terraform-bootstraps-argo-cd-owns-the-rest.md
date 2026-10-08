@@ -19,7 +19,7 @@ bootstrap can't assume EKS, GKE, or a specific local tool.
 
 **Terraform's job ends when Argo CD is running and pointed at this repo.**
 
-Terraform (in `bootstrap/terraform/`) does exactly three things, using only the
+Terraform (in `terraform/argocd/`) does exactly three things, using only the
 `helm` provider against a kubeconfig context:
 
 1. Installs Argo CD (Helm chart, pinned version).

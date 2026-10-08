@@ -1,0 +1,8 @@
+# terraform init -backend-config=backend.hcl
+# The storage account must exist first (create it once, out of band, with
+# versioning and soft delete on). State isn't committed to Git.
+resource_group_name  = "rg-fernhill-tfstate"
+storage_account_name = "stfernhilltfstate"
+container_name       = "tfstate"
+key                  = "aks/prod.tfstate"
+use_azuread_auth     = true

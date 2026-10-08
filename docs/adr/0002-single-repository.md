@@ -22,12 +22,12 @@ from (2).
 **Keep everything in one repository, separated by directory and enforced by CODEOWNERS:**
 
 ```
-bootstrap/   # day-0: Terraform that installs Argo CD on any cluster
+terraform/   # aks/: the production cluster; argocd/: day-0 bootstrap on any cluster
 platform/    # platform team: APIs, policies, charts, Argo apps
 tenants/     # developers + agents: one directory per team/service
 ```
 
-- `platform/**` and `bootstrap/**` require platform-team review.
+- `platform/**`, `terraform/**` and `bootstrap/**` require platform-team review.
 - `tenants/<team>/**` requires that team's review.
 - Agent PRs may only touch `tenants/**`. CI enforces this (see ADR-0001).
 

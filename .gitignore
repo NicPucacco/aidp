@@ -18,3 +18,8 @@ dist-types/
 # Local
 .env
 .DS_Store
+
+# Terraform inputs/backends with real values stay local
+*.tfvars
+!*.tfvars.example
+backend.hcl
