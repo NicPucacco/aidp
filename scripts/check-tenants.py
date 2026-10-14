@@ -46,6 +46,19 @@ def tenant_objects(tenants: pathlib.Path):
                     yield team_dir.name, path.relative_to(tenants.parent), doc
 
 
+def api_fields() -> dict[str, set[str]]:
+    """Top-level spec fields each platform API accepts, from its XRD."""
+    fields = {}
+    for kind, api in KINDS.items():
+        xrd = yaml.safe_load((APIS / api / "definition.yaml").read_text())
+        spec = xrd["spec"]["versions"][0]["schema"]["openAPIV3Schema"]["properties"]["spec"]
+        fields[kind] = set(spec.get("properties", {}))
+    return fields
+
+
+API_FIELDS = api_fields()
+
+
 def boundary_errors(path, doc):
     errors = []
     group = doc.get("apiVersion", "").split("/")[0]
@@ -53,6 +66,11 @@ def boundary_errors(path, doc):
         errors.append(f"{path}: {doc.get('kind')} ({group or 'core'}) isn't a platform API; tenants may only declare {GROUP} kinds")
     elif doc.get("kind") not in KINDS:
         errors.append(f"{path}: unknown platform kind {doc.get('kind')}")
+    if doc.get("kind") in API_FIELDS:
+        # The API server would silently drop unknown fields; say so here instead.
+        extra = set(doc.get("spec") or {}) - API_FIELDS[doc["kind"]]
+        if extra:
+            errors.append(f"{path}: {doc['kind']} has no field(s) {sorted(extra)}; allowed: {sorted(API_FIELDS[doc['kind']])}")
     if "namespace" in doc.get("metadata", {}):
         errors.append(f"{path}: metadata.namespace must not be set; the platform assigns the team namespace")
     return errors

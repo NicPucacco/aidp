@@ -20,6 +20,31 @@ import yaml
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 AKS = ROOT / "scripts" / "fixtures" / "environment-aks.values.yaml"
 POLICIES = sorted(str(p) for p in (ROOT / "platform" / "policies").glob("*.yaml"))
+GROUP = "platform.fernhill.io"
+
+
+def api_fields() -> dict[str, set[str]]:
+    """Top-level spec fields each platform API accepts, from its XRD."""
+    fields = {}
+    for definition in (ROOT / "platform" / "apis").glob("*/definition.yaml"):
+        xrd = yaml.safe_load(definition.read_text())
+        spec = xrd["spec"]["versions"][0]["schema"]["openAPIV3Schema"]["properties"]["spec"]
+        fields[xrd["spec"]["names"]["kind"]] = set(spec.get("properties", {}))
+    return fields
+
+
+def unknown_fields(rendered: dict[str, list[dict]]) -> list[str]:
+    """Platform API objects using fields their XRD doesn't define. The API
+    server would silently drop them, and Argo CD would show the app
+    OutOfSync forever (this is how a removed `size` field surfaced)."""
+    allowed, problems = api_fields(), []
+    for chart, docs in rendered.items():
+        for d in docs:
+            if d.get("apiVersion", "").startswith(GROUP) and d["kind"] in allowed:
+                extra = set(d.get("spec") or {}) - allowed[d["kind"]]
+                if extra:
+                    problems.append(f"{chart}: {d['kind']} {d['metadata']['name']} sets unknown field(s) {sorted(extra)}")
+    return problems
 MANAGED_NAMESPACES = ["backstage"]  # labelled platform.fernhill.io/managed=true by its chart
 
 
@@ -49,6 +74,9 @@ def main() -> int:
             "backstage": helm("backstage", *portal_values(environment)),
         }
         kinds = {chart: sorted({d["kind"] for d in docs}) for chart, docs in rendered.items()}
+        for problem in unknown_fields(rendered):
+            print(f"[{environment}] {problem}")
+            failures += 1
         print(f"[{environment}] rendered: " + "; ".join(f"{c}: {len(rendered[c])} objects" for c in kinds))
 
         with tempfile.TemporaryDirectory() as tmp:
