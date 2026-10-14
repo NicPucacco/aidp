@@ -1,0 +1,24 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: payment-reconciliation
+  description: "Matches incoming payments against issued invoices and flags mismatches for Billing."
+  annotations:
+    backstage.io/kubernetes-label-selector: app.kubernetes.io/name=payment-reconciliation
+    backstage.io/kubernetes-namespace: billing
+spec:
+  type: service
+  lifecycle: experimental
+  owner: group:billing
+  consumesApis: [webservice-api]
+  dependsOn: [resource:payment-reconciliation-db]
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: payment-reconciliation-db
+  description: Postgres for payment-reconciliation (Database API).
+spec:
+  type: database
+  owner: group:billing
+  dependsOn: [api:database-api]
