@@ -98,3 +98,24 @@ variable "sso_engineers_group_object_id" {
   description = "Entra group whose members get read-only Argo CD and portal access (all engineers)."
   type        = string
 }
+
+variable "postgres" {
+  description = "Azure Database for PostgreSQL Flexible Server settings for every Database (ADR-0019). Teams don't choose these."
+  type = object({
+    version               = string
+    sku_name              = string
+    storage_mb            = number
+    backup_retention_days = number
+  })
+  default = {
+    version               = "17"
+    sku_name              = "B_Standard_B1ms"
+    storage_mb            = 32768
+    backup_retention_days = 7
+  }
+
+  validation {
+    condition     = var.postgres.backup_retention_days >= 7 && var.postgres.backup_retention_days <= 35
+    error_message = "Azure Flexible Server keeps backups for 7 to 35 days."
+  }
+}

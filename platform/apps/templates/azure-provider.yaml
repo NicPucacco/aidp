@@ -1,0 +1,58 @@
+{{- $db := .Values.environment.database }}
+{{- if eq $db.backend "azure-flexible-server" }}
+# Crossplane's Azure provider for Postgres, only where Databases run on Azure
+# (ADR-0019). It authenticates with workload identity: the ServiceAccount
+# below is federated with a managed identity Terraform creates, so no Azure
+# credential is stored in the cluster.
+apiVersion: pkg.crossplane.io/v1beta1
+kind: DeploymentRuntimeConfig
+metadata:
+  name: azure-workload-identity
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  serviceAccountTemplate:
+    metadata:
+      # Fixed name: the federated credential trusts exactly this subject.
+      name: provider-azure-dbforpostgresql
+      annotations:
+        azure.workload.identity/client-id: {{ required "environment.database.azure.clientID is required" $db.azure.clientID | quote }}
+  deploymentTemplate:
+    spec:
+      selector: {}
+      template:
+        metadata:
+          labels:
+            azure.workload.identity/use: "true"
+        spec:
+          containers:
+            - name: package-runtime
+---
+apiVersion: pkg.crossplane.io/v1
+kind: Provider
+metadata:
+  name: provider-azure-dbforpostgresql
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  package: xpkg.crossplane.io/crossplane-contrib/provider-azure-dbforpostgresql:{{ .Values.versions.providerAzure }}
+  runtimeConfigRef:
+    name: azure-workload-identity
+---
+# The default config every namespaced Azure resource uses. Wave 2: its CRD is
+# installed by the provider family package (wave 1).
+apiVersion: azure.m.upbound.io/v1beta1
+kind: ClusterProviderConfig
+metadata:
+  name: default
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  credentials:
+    source: OIDCTokenFile
+  oidcTokenFilePath: /var/run/secrets/azure/tokens/azure-identity-token
+  clientID: {{ $db.azure.clientID | quote }}
+  tenantID: {{ required "environment.database.azure.tenantID is required" $db.azure.tenantID | quote }}
+  subscriptionID: {{ required "environment.database.azure.subscriptionID is required" $db.azure.subscriptionID | quote }}
+{{- end }}

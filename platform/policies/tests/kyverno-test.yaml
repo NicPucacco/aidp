@@ -15,9 +15,9 @@ resources:
   - resources/noncompliant.yaml
   - resources/registry-port-no-tag.yaml
   - resources/legacy-app.yaml
-  - resources/agent-large-database.yaml
-  - resources/agent-small-database.yaml
-  - resources/human-large-database.yaml
+  - resources/agent-large-webservice.yaml
+  - resources/agent-small-webservice.yaml
+  - resources/human-large-webservice.yaml
   - resources/agent-many-replicas.yaml
 variables: values.yaml
 results:
@@ -81,13 +81,13 @@ results:
   # Agent limits apply only to objects an agent asked for (ADR-0013).
   - policy: agent-limits
     isValidatingPolicy: true
-    kind: Database
-    resources: [billing/agent-small-database]
+    kind: WebService
+    resources: [billing/agent-small-webservice]
     result: pass
   - policy: agent-limits
     isValidatingPolicy: true
-    kind: Database
-    resources: [billing/agent-large-database]
+    kind: WebService
+    resources: [billing/agent-large-webservice]
     result: fail
   - policy: agent-limits
     isValidatingPolicy: true
@@ -96,6 +96,6 @@ results:
     result: fail
   - policy: agent-limits
     isValidatingPolicy: true
-    kind: Database
-    resources: [billing/human-large-database]
+    kind: WebService
+    resources: [billing/human-large-webservice]
     result: skip

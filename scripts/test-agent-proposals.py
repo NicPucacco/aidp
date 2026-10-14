@@ -3,7 +3,7 @@
 
 1. Proposals the server would open must pass CI exactly like human changes.
 2. A misbehaving agent that skips the server's own checks and pushes a
-   'large' database directly must still be stopped by CI. The server's
+   'large' WebService directly must still be stopped by CI. The server's
    limits are UX; the policy is the control.
 
 Usage: scripts/test-agent-proposals.py   (needs fernhill-platform-mcp installed)
@@ -45,8 +45,8 @@ def main() -> int:
         for p in (
             P.propose_webservice(repo, agent="ci", team="routing", name="route-planner",
                                  image="ghcr.io/stefanprodan/podinfo:6.15.0", port=9898,
-                                 health_path="/readyz", reason=REASON, database_size="small"),
-            P.propose_database(repo, agent="ci", team="tracking", name="tracking-events", reason=REASON, size="medium"),
+                                 health_path="/readyz", reason=REASON, with_database=True),
+            P.propose_database(repo, agent="ci", team="tracking", name="tracking-events", reason=REASON),
         ):
             assert p.ok, p.problems
             write(good / "tenants", p)
@@ -57,13 +57,14 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory() as tmp:
         bad = pathlib.Path(tmp)
-        rogue = P.propose_database(repo, agent="rogue", team="tracking", name="huge-db", reason=REASON, size="large")
+        rogue = P.propose_webservice(repo, agent="rogue", team="tracking", name="huge-svc", reason=REASON,
+                                     image="ghcr.io/stefanprodan/podinfo:6.15.0", size="large")
         assert not rogue.ok  # the server would refuse ...
         write(bad / "tenants", rogue)  # ... so pretend the agent pushed it anyway
         code = gate(bad / "tenants")
-        print(f"{'✓' if code != 0 else '✗'} an agent-annotated 'large' database pushed directly is rejected")
+        print(f"{'✓' if code != 0 else '✗'} an agent-annotated 'large' WebService pushed directly is rejected")
         if code == 0:
-            failures.append("rogue large database")
+            failures.append("rogue large WebService")
 
     return 1 if failures else 0
 

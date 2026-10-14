@@ -5,5 +5,4 @@ metadata:
   annotations:
     platform.fernhill.io/requested-by: agent:claude-code
 spec:
-  size: small
   databaseName: reconciliation

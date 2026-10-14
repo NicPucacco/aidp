@@ -20,7 +20,7 @@ def objects(p: P.Proposal) -> dict[str, dict]:
 def test_webservice_with_database_renders_golden_path_files(repo):
     p = P.propose_webservice(
         repo, agent="test-agent", team="routing", name="route-planner",
-        image="ghcr.io/fernhill/route-planner:0.3.1", reason=REASON, database_size="small",
+        image="ghcr.io/fernhill/route-planner:0.3.1", reason=REASON, with_database=True,
     )
 
     assert p.ok, p.problems

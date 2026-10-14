@@ -58,9 +58,9 @@ credentials live in CI yet.
   1. ~~**Ingress:**~~ done in [ADR-0017](0017-ingress-per-environment.md): static
      IP, Azure DNS wildcard, and Let's Encrypt via cert-manager, all driven by one
      environment object from Terraform.
-  2. **Database backups:** CloudNativePG to Blob Storage via workload identity,
-     or an Azure Database for PostgreSQL composition behind the same `Database`
-     API, which the API was designed for (ADR-0006).
+  2. ~~**Database backups:**~~ done in [ADR-0019](0019-database-backends-per-environment.md):
+     on AKS, Databases are Azure Flexible Servers with 7 days of backups, behind
+     the same `Database` API, as ADR-0006 intended.
   3. ~~**Human SSO:**~~ done in [ADR-0018](0018-sso-without-secrets.md): Entra ID
      for Argo CD and the portal, via workload identity (no client secrets).
   4. **Secrets:** the agent's GitHub App key and any future secrets go to

@@ -1,9 +1,10 @@
 apiVersion: platform.fernhill.io/v1alpha1
-kind: Database
+kind: WebService
 metadata:
-  name: agent-large-database
+  name: agent-small-webservice
   namespace: billing
   annotations:
     platform.fernhill.io/requested-by: agent:claude-code
 spec:
-  size: large
+  image: ghcr.io/fernhill/invoice-api:1.4.2
+  size: small

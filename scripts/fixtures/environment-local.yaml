@@ -19,4 +19,3 @@ data:
       memory: 256Mi
       memoryLimit: 512Mi
       storage: 1Gi
-

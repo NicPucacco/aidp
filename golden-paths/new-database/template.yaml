@@ -5,8 +5,9 @@ metadata:
   name: new-database
   title: New database
   description: >-
-    A t-shirt-sized Postgres database. Credentials land in a Secret your
-    services reference; you never handle them.
+    A Postgres database. You choose its name; the platform decides where it
+    runs and how it's backed up. Credentials land in a Secret your services
+    reference; you never handle them.
   tags: [golden-path, database]
 spec:
   owner: group:platform
@@ -29,12 +30,6 @@ spec:
             catalogFilter:
               kind: Group
               spec.type: team
-        size:
-          title: Size
-          type: string
-          enum: [small, medium, large]
-          enumNames: ["Small (1 instance, 1Gi)", "Medium (2 instances, 10Gi)", "Large (3 instances, 50Gi)"]
-          default: small
         databaseName:
           title: Database name
           type: string
@@ -50,7 +45,6 @@ spec:
         values:
           name: ${{ parameters.name }}
           team: ${{ parameters.owner | parseEntityRef | pick('name') }}
-          size: ${{ parameters.size }}
           databaseName: ${{ parameters.databaseName }}
 
     - id: publish
@@ -64,7 +58,7 @@ spec:
         description: |
           Requested from the Fernhill Developer Portal (golden path: **new database**).
 
-          Size `${{ parameters.size }}`, database `${{ parameters.databaseName }}`,
+          Database `${{ parameters.databaseName }}`,
           owned by `${{ parameters.owner | parseEntityRef | pick('name') }}`.
 
   output:

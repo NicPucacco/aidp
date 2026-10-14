@@ -50,7 +50,8 @@ run "emits_the_environment_the_platform_expects" {
   # Same shape as `environment` in platform/apps/values.yaml (ADR-0017).
   assert {
     condition = (
-      toset(keys(output.platform_environment)) == toset(["name", "baseDomain", "urlPort", "gateway", "tls", "sso"]) &&
+      toset(keys(output.platform_environment)) == toset(["name", "baseDomain", "urlPort", "gateway", "tls", "sso", "database"]) &&
+      toset(keys(output.platform_environment.database.azure)) == toset(["resourceGroup", "location", "version", "skuName", "storageMb", "backupRetentionDays", "delegatedSubnetID", "privateDNSZoneID", "clientID", "tenantID", "subscriptionID"]) &&
       toset(keys(output.platform_environment.sso)) == toset(["enabled", "tenantID", "argocdClientID", "portalClientID", "adminsGroupID", "engineersGroupID"]) &&
       toset(keys(output.platform_environment.gateway)) == toset(["serviceType", "ipv4", "resourceGroup"]) &&
       toset(keys(output.platform_environment.tls)) == toset(["enabled", "acmeEmail", "acmeServer", "azureDNS"]) &&
@@ -104,6 +105,43 @@ run "sso_trusts_exactly_one_service_account_per_app" {
     condition     = one(azuread_application.sso["portal"].web[0].redirect_uris) == "https://backstage.platform.fernhill.example/oauth2/callback"
     error_message = "The portal's redirect URI must be its oauth2-proxy callback on the base domain."
   }
+}
+
+run "databases_run_privately_on_azure_with_seven_days_of_backups" {
+  command = plan
+
+  assert {
+    condition = (
+      output.platform_environment.database.backend == "azure-flexible-server" &&
+      output.platform_environment.database.azure.backupRetentionDays == 7
+    )
+    error_message = "AKS Databases should be Flexible Servers keeping 7 days of backups."
+  }
+
+  assert {
+    condition     = azapi_resource.subnet_postgres.body.properties.delegations[0].properties.serviceName == "Microsoft.DBforPostgreSQL/flexibleServers"
+    error_message = "Servers need a subnet delegated to Flexible Server (private access)."
+  }
+
+  assert {
+    condition     = endswith(azapi_resource.postgres_private_dns_zone.name, ".postgres.database.azure.com")
+    error_message = "Flexible Server private access needs a zone ending in .postgres.database.azure.com."
+  }
+
+  assert {
+    condition     = azapi_resource.crossplane_azure_federation.body.properties.subject == "system:serviceaccount:crossplane-system:provider-azure-dbforpostgresql"
+    error_message = "The provider's identity must trust only the provider's ServiceAccount."
+  }
+}
+
+run "rejects_backup_retention_azure_does_not_support" {
+  command = plan
+
+  variables {
+    postgres = { version = "17", sku_name = "B_Standard_B1ms", storage_mb = 32768, backup_retention_days = 3 }
+  }
+
+  expect_failures = [var.postgres]
 }
 
 run "rejects_an_unrestricted_api_server_by_omission" {

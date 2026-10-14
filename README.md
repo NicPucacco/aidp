@@ -43,7 +43,7 @@ and again at admission.
 
 Agents go through exactly the same path. Their PRs come from a separate
 GitHub App identity, the objects they create are annotated as agent-requested,
-and a few extra limits apply to them, such as no large databases. Supporting
+and a few extra limits apply to them, such as no large services. Supporting
 agents needed much less new machinery than I expected: an interface, one
 policy and one CI job.
 
@@ -61,7 +61,7 @@ stays readable.
 | Workflow and repository | [0001](docs/adr/0001-the-pull-request-is-the-platform-api.md) pull requests as the platform API · [0002](docs/adr/0002-single-repository.md) single repository |
 | Bootstrap and environments | [0003](docs/adr/0003-terraform-bootstraps-argo-cd-owns-the-rest.md) Terraform and Argo CD · [0004](docs/adr/0004-kubernetes-agnostic-local-first.md) Kubernetes-agnostic · [0016](docs/adr/0016-production-runs-on-aks.md) AKS · [0017](docs/adr/0017-ingress-per-environment.md) ingress per environment |
 | Policy | [0005](docs/adr/0005-kyverno-policies-run-in-ci-and-at-admission.md) Kyverno in CI and at admission · [0009](docs/adr/0009-render-and-check-tenant-config-before-review.md) checking tenant changes before review |
-| Platform APIs | [0006](docs/adr/0006-database-api-and-python-compositions.md) Database · [0008](docs/adr/0008-webservice-api.md) WebService · [0010](docs/adr/0010-platform-api-lifecycle.md) API lifecycle · [0014](docs/adr/0014-compositions-are-go-templates.md) Go-template compositions · [0015](docs/adr/0015-why-not-terraform-modules.md) why not Terraform modules |
+| Platform APIs | [0006](docs/adr/0006-database-api-and-python-compositions.md) Database · [0019](docs/adr/0019-database-backends-per-environment.md) database backends · [0008](docs/adr/0008-webservice-api.md) WebService · [0010](docs/adr/0010-platform-api-lifecycle.md) API lifecycle · [0014](docs/adr/0014-compositions-are-go-templates.md) Go-template compositions · [0015](docs/adr/0015-why-not-terraform-modules.md) why not Terraform modules |
 | Tenants | [0007](docs/adr/0007-tenant-boundary.md) tenant boundary |
 | Portal and access | [0011](docs/adr/0011-the-portal-is-a-thin-client.md) Backstage · [0018](docs/adr/0018-sso-without-secrets.md) sign-in |
 | Agents | [0012](docs/adr/0012-agent-interface.md) agent interface · [0013](docs/adr/0013-agent-guardrails.md) agent guardrails |
@@ -74,7 +74,7 @@ stays readable.
 | Platform APIs | Crossplane v2 with Go-template compositions |
 | Policy | Kyverno |
 | Ingress | Gateway API (Envoy Gateway), cert-manager on Azure |
-| Databases | CloudNativePG |
+| Databases | CloudNativePG locally, Azure Database for PostgreSQL on AKS |
 | Portal | Backstage |
 | Agents | A Python MCP server that can only open pull requests |
 | Production | AKS, using the Azure Verified Module |

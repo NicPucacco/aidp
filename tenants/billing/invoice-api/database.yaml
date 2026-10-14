@@ -5,5 +5,4 @@ kind: Database
 metadata:
   name: invoice-api
 spec:
-  size: small
   databaseName: invoices

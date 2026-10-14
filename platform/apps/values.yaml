@@ -12,6 +12,7 @@ versions:
   envoyGateway: 1.9.2
   cloudnativePg: 0.29.1
   certManager: v1.21.2
+  providerAzure: v2.8.0
 
 # Everything that differs between clusters (ADR-0004, ADR-0017). Defaults are
 # the local kind cluster. On AKS, terraform/aks outputs this whole object and
