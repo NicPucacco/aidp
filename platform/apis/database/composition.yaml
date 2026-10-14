@@ -1,16 +1,32 @@
-# Composes a Fernhill Database into a CloudNativePG Cluster (ADR-0006, ADR-0014).
-# Tested by rendering real XRs through this file: platform/apis/tests/.
+# Composes a Fernhill Database onto the environment's backend (ADR-0019):
+#   cloudnative-pg         a CloudNativePG Cluster in the team's namespace (local)
+#   azure-flexible-server  Azure Database for PostgreSQL Flexible Server (AKS)
+# Both publish the same "<name>-app" Secret, so WebServices bind the same way
+# everywhere. Tested by rendering real XRs: platform/apis/tests/.
 apiVersion: apiextensions.crossplane.io/v1
 kind: Composition
 metadata:
-  name: database-cnpg
+  name: database
 spec:
   compositeTypeRef:
     apiVersion: platform.fernhill.io/v1alpha1
     kind: Database
   mode: Pipeline
   pipeline:
-    - step: compose
+    # Loads EnvironmentConfig "platform": which backend, and its settings.
+    - step: environment
+      functionRef:
+        name: function-environment-configs
+      input:
+        apiVersion: environmentconfigs.fn.crossplane.io/v1beta1
+        kind: Input
+        spec:
+          environmentConfigs:
+            - type: Reference
+              ref:
+                name: platform
+
+    - step: cloudnative-pg
       functionRef:
         name: function-go-templating
       input:
@@ -19,29 +35,13 @@ spec:
         source: Inline
         inline:
           template: |
+            {{- $env := index .context "apiextensions.crossplane.io/environment" }}
+            {{- if eq $env.database.backend "cloudnative-pg" }}
+            {{- $cnpg := $env.database.cloudnativePG }}
             {{- $xr := .observed.composite.resource }}
             {{- $name := $xr.metadata.name }}
             {{- $team := $xr.metadata.namespace }}
-            {{- $spec := $xr.spec | default dict }}
-
-            {{- /*
-              What each t-shirt size means. This table is the platform team's
-              contract with tenants: changing it changes every database of
-              that size on the next reconcile.
-            */}}
-            {{- $sizes := dict
-                  "small"  (dict "instances" 1 "storage" "1Gi"  "cpu" "100m" "memory" "256Mi" "memoryLimit" "512Mi")
-                  "medium" (dict "instances" 2 "storage" "10Gi" "cpu" "250m" "memory" "1Gi"   "memoryLimit" "1Gi")
-                  "large"  (dict "instances" 3 "storage" "50Gi" "cpu" "1"    "memory" "4Gi"   "memoryLimit" "4Gi") }}
-
-            {{- /* Patch versions are pinned so a minor upgrade is a reviewed PR. */}}
-            {{- $images := dict
-                  "16" "ghcr.io/cloudnative-pg/postgresql:16.15"
-                  "17" "ghcr.io/cloudnative-pg/postgresql:17.11"
-                  "18" "ghcr.io/cloudnative-pg/postgresql:18.6" }}
-
-            {{- $size := index $sizes ($spec.size | default "small") }}
-            {{- $database := $spec.databaseName | default "app" }}
+            {{- $database := ($xr.spec | default dict).databaseName | default "app" }}
             {{- $observed := .observed.resources | default dict }}
             ---
             apiVersion: postgresql.cnpg.io/v1
@@ -59,26 +59,159 @@ spec:
                 # Team namespaces are named after the team (ADR-0007).
                 platform.fernhill.io/owner: {{ $team }}
             spec:
-              instances: {{ $size.instances }}
-              imageName: {{ index $images ($spec.version | default "18") }}
+              # Size and version are the platform's choice per environment,
+              # not the team's (ADR-0019). No backups locally, by design.
+              instances: {{ $cnpg.instances }}
+              imageName: {{ $cnpg.image }}
               storage:
-                size: {{ $size.storage }}
+                size: {{ $cnpg.storage }}
               resources:
                 requests:
-                  cpu: {{ $size.cpu | quote }}
-                  memory: {{ $size.memory }}
+                  cpu: {{ $cnpg.cpu | quote }}
+                  memory: {{ $cnpg.memory }}
                 limits:
-                  memory: {{ $size.memoryLimit }}
+                  memory: {{ $cnpg.memoryLimit }}
               bootstrap:
                 initdb:
                   database: {{ $database }}
                   owner: {{ $database }}
             ---
-            # CloudNativePG writes connection details to "<cluster>-app"; this
-            # is the contract the WebService API binds to.
+            # CloudNativePG writes the "<cluster>-app" Secret itself, with the
+            # keys the WebService API binds to.
             apiVersion: platform.fernhill.io/v1alpha1
             kind: Database
             status:
+              backend: cloudnative-pg
               connectionSecret: {{ $name }}-app
               host: {{ $name }}-rw.{{ $team }}.svc
               port: 5432
+            {{- end }}
+
+    - step: azure-flexible-server
+      functionRef:
+        name: function-go-templating
+      input:
+        apiVersion: gotemplating.fn.crossplane.io/v1beta1
+        kind: GoTemplate
+        source: Inline
+        inline:
+          template: |
+            {{- $env := index .context "apiextensions.crossplane.io/environment" }}
+            {{- if eq $env.database.backend "azure-flexible-server" }}
+            {{- $az := $env.database.azure }}
+            {{- $xr := .observed.composite.resource }}
+            {{- $name := $xr.metadata.name }}
+            {{- $team := $xr.metadata.namespace }}
+            {{- $database := ($xr.spec | default dict).databaseName | default "app" }}
+            {{- $observed := .observed.resources | default dict }}
+            {{- $admin := "fernhill" }}
+            {{- /* Server names are global DNS names: <env>-<team>-<name>. */}}
+            {{- $serverName := printf "%s-%s-%s" $env.name $team $name | trunc 63 | trimSuffix "-" }}
+            {{- $server := index $observed "server" }}
+            {{- $fqdn := "" }}
+            {{- if $server }}{{ $fqdn = dig "status" "atProvider" "fqdn" "" $server.resource }}{{ end }}
+            {{- /*
+              The server is never deleted by Crossplane (no Delete in its
+              management policies): deleting a Database keeps the server and
+              its backups until a platform engineer removes it (ADR-0019).
+            */}}
+            {{- $keep := list "Observe" "Create" "Update" "LateInitialize" }}
+            ---
+            apiVersion: dbforpostgresql.azure.m.upbound.io/v1beta1
+            kind: FlexibleServer
+            metadata:
+              name: {{ $name }}
+              annotations:
+                {{ setResourceNameAnnotation "server" }}
+                crossplane.io/external-name: {{ $serverName }}
+                {{- if eq (getResourceCondition "Ready" $server).Status "True" }}
+                gotemplating.fn.crossplane.io/ready: "True"
+                {{- end }}
+            spec:
+              managementPolicies: {{ toJson $keep }}
+              forProvider:
+                resourceGroupName: {{ $az.resourceGroup }}
+                location: {{ $az.location }}
+                version: {{ $az.version | quote }}
+                skuName: {{ $az.skuName }}
+                storageMb: {{ $az.storageMb }}
+                autoGrowEnabled: true
+                backupRetentionDays: {{ $az.backupRetentionDays }}
+                geoRedundantBackupEnabled: false
+                # Private access only: a delegated subnet in the AKS VNet and
+                # a private DNS zone (terraform/aks).
+                delegatedSubnetId: {{ $az.delegatedSubnetID }}
+                privateDnsZoneId: {{ $az.privateDNSZoneID }}
+                publicNetworkAccessEnabled: false
+                administratorLogin: {{ $admin }}
+                autoGeneratePassword: true
+                administratorPasswordSecretRef:
+                  name: {{ $name }}-admin
+                  key: password
+                # Team labels, for cost and ownership in Azure (ADR-0019).
+                tags:
+                  team: {{ $team }}
+                  database: {{ $name }}
+                  environment: {{ $env.name }}
+                  managed-by: crossplane
+              writeConnectionSecretToRef:
+                name: {{ $name }}-server
+            ---
+            apiVersion: dbforpostgresql.azure.m.upbound.io/v1beta1
+            kind: FlexibleServerDatabase
+            metadata:
+              name: {{ $name }}-{{ $database | replace "_" "-" }}
+              annotations:
+                {{ setResourceNameAnnotation "database" }}
+                crossplane.io/external-name: {{ $database }}
+                {{- if eq (getResourceCondition "Ready" (index $observed "database")).Status "True" }}
+                gotemplating.fn.crossplane.io/ready: "True"
+                {{- end }}
+            spec:
+              managementPolicies: {{ toJson $keep }}
+              forProvider:
+                serverIdRef:
+                  name: {{ $name }}
+                charset: UTF8
+                collation: en_US.utf8
+            {{- /*
+              The "<name>-app" Secret, in the same shape CloudNativePG writes,
+              assembled once the server has published its credentials. The
+              provider's own username is "login@server" (a Single Server
+              convention), so the plain login is used instead.
+            */}}
+            {{- $conn := getComposedConnectionDetails . "server" }}
+            {{- if and $fqdn $conn (index $conn "password") }}
+            {{- $password := index $conn "password" | b64dec }}
+            ---
+            apiVersion: v1
+            kind: Secret
+            metadata:
+              name: {{ $name }}-app
+              annotations:
+                {{ setResourceNameAnnotation "app-secret" }}
+                gotemplating.fn.crossplane.io/ready: "True"
+              labels:
+                platform.fernhill.io/owner: {{ $team }}
+            type: Opaque
+            # `data`, not `stringData`: stringData is never stored, so it would
+            # look like drift on every reconcile.
+            data:
+              host: {{ $fqdn | b64enc }}
+              port: {{ "5432" | b64enc }}
+              dbname: {{ $database | b64enc }}
+              user: {{ $admin | b64enc }}
+              password: {{ index $conn "password" }}
+              uri: {{ printf "postgresql://%s:%s@%s:5432/%s?sslmode=require" $admin (urlquery $password) $fqdn $database | b64enc }}
+            {{- end }}
+            ---
+            apiVersion: platform.fernhill.io/v1alpha1
+            kind: Database
+            status:
+              backend: azure-flexible-server
+              connectionSecret: {{ $name }}-app
+              {{- with $fqdn }}
+              host: {{ . }}
+              {{- end }}
+              port: 5432
+            {{- end }}

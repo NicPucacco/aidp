@@ -12,3 +12,12 @@ data:
   baseDomain: {{ .Values.environment.baseDomain }}
   urlPort: {{ .Values.environment.urlPort | quote }}
   scheme: {{ ternary "https" "http" .Values.environment.tls.enabled }}
+  database:
+    backend: {{ .Values.environment.database.backend }}
+    {{- if eq .Values.environment.database.backend "cloudnative-pg" }}
+    cloudnativePG:
+      {{- toYaml .Values.environment.database.cloudnativePG | nindent 6 }}
+    {{- else }}
+    azure:
+      {{- toYaml (omit .Values.environment.database.azure "clientID" "tenantID" "subscriptionID") | nindent 6 }}
+    {{- end }}

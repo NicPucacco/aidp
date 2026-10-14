@@ -25,3 +25,17 @@ environment:
     portalClientID: 00000000-0000-0000-0000-00000000000c
     adminsGroupID: 00000000-0000-0000-0000-00000000000d
     engineersGroupID: 00000000-0000-0000-0000-00000000000e
+  database:
+    backend: azure-flexible-server
+    azure:
+      resourceGroup: rg-fernhill-prod-data
+      location: eastus2
+      version: "17"
+      skuName: B_Standard_B1ms
+      storageMb: 32768
+      backupRetentionDays: 7
+      delegatedSubnetID: /subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-fernhill-prod/providers/Microsoft.Network/virtualNetworks/vnet-fernhill-prod/subnets/snet-postgres
+      privateDNSZoneID: /subscriptions/00000000-0000-0000-0000-000000000001/resourceGroups/rg-fernhill-prod/providers/Microsoft.Network/privateDnsZones/fernhill-prod.private.postgres.database.azure.com
+      clientID: 00000000-0000-0000-0000-00000000000f
+      tenantID: 00000000-0000-0000-0000-00000000000a
+      subscriptionID: 00000000-0000-0000-0000-000000000001
