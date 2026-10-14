@@ -33,14 +33,14 @@ CASES = [
         "web service with database",
         [
             ("new-webservice/skeleton", {"withDatabase": True}),
-            ("new-webservice/skeleton-database", {"size": "medium", "databaseName": "routes"}),
+            ("new-webservice/skeleton-database", {"databaseName": "routes"}),
         ],
         "routing",
         "route-optimizer",
     ),
     (
         "standalone database",
-        [("new-database/skeleton", {"size": "small", "databaseName": "events"})],
+        [("new-database/skeleton", {"databaseName": "events"})],
         "tracking",
         "tracking-events",
     ),

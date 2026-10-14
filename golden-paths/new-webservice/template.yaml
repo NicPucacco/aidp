@@ -87,12 +87,6 @@ spec:
                 withDatabase: {const: false}
             - properties:
                 withDatabase: {const: true}
-                databaseSize:
-                  title: Database size
-                  type: string
-                  enum: [small, medium, large]
-                  enumNames: ["Small (1 instance, 1Gi)", "Medium (2 instances, 10Gi)", "Large (3 instances, 50Gi)"]
-                  default: small
                 databaseName:
                   title: Database name
                   type: string
@@ -126,7 +120,6 @@ spec:
         values:
           name: ${{ parameters.name }}
           team: ${{ parameters.owner | parseEntityRef | pick('name') }}
-          size: ${{ parameters.databaseSize }}
           databaseName: ${{ parameters.databaseName }}
 
     - id: publish

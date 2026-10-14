@@ -113,32 +113,31 @@ def build_server(repo: Repo | None = None) -> MCPServer:
         size: str = "small",
         replicas: int = 2,
         expose: bool = True,
-        database_size: str | None = None,
+        with_database: bool = False,
         database_name: str = "app",
         dry_run: bool = True,
     ) -> dict:
         """Request a new web service (and optionally its own Postgres) as a pull request.
 
-        `image` must be pinned (tag or digest). Set `database_size` to give the
-        service a database; its credentials are injected as DATABASE_URL.
+        `image` must be pinned (tag or digest). Set `with_database` to give the
+        service its own database; its credentials are injected as DATABASE_URL.
         Runs as a dry run unless dry_run=false.
         """
         return _publish(
             P.propose_webservice(
                 repo, agent=agent, team=team, name=name, image=image, reason=reason, description=description,
                 port=port, health_path=health_path, size=size, replicas=replicas, expose=expose,
-                database_size=database_size, database_name=database_name,
+                with_database=with_database, database_name=database_name,
             ),
             dry_run,
         )
 
     @server.tool(annotations=PROPOSE)
-    def propose_database(
-        team: str, name: str, reason: str, size: str = "small", database_name: str = "app", dry_run: bool = True
-    ) -> dict:
-        """Request a standalone Postgres database as a pull request. Runs as a dry run unless dry_run=false."""
+    def propose_database(team: str, name: str, reason: str, database_name: str = "app", dry_run: bool = True) -> dict:
+        """Request a standalone Postgres database as a pull request. You choose its name; the
+        platform decides where it runs and how it's backed up. Runs as a dry run unless dry_run=false."""
         return _publish(
-            P.propose_database(repo, agent=agent, team=team, name=name, reason=reason, size=size, database_name=database_name),
+            P.propose_database(repo, agent=agent, team=team, name=name, reason=reason, database_name=database_name),
             dry_run,
         )
 

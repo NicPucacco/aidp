@@ -3,5 +3,4 @@ kind: Database
 metadata:
   name: ${{ values.name }}
 spec:
-  size: ${{ values.size }}
   databaseName: ${{ values.databaseName }}

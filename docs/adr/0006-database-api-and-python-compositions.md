@@ -1,6 +1,6 @@
 # ADR-0006: A t-shirt-sized Database API, composed in tested Python
 
-- **Status:** Accepted. §3 superseded by [ADR-0014](0014-compositions-are-go-templates.md) (compositions are now Go templates)
+- **Status:** Accepted. §1's t-shirt sizes superseded by [ADR-0019](0019-database-backends-per-environment.md) (teams choose only a name); §3 superseded by [ADR-0014](0014-compositions-are-go-templates.md) (compositions are now Go templates)
 - **Date:** 2026-10-06
 - **Phase:** v2-database-path
 

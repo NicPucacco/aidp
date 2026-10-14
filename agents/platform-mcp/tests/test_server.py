@@ -42,7 +42,8 @@ async def test_read_tools_reflect_the_repo(server):
     found = result(await server.call_tool("search_catalog", {"query": "invoice"}))
     assert {"invoice-api", "invoice-api-db"} <= {e["name"] for e in found}
     schema = result(await server.call_tool("describe_api", {"kind": "Database"}))
-    assert schema["spec"]["properties"]["size"]["enum"] == ["small", "medium", "large"]
+    # Teams choose only the database's name; the platform decides the rest (ADR-0019).
+    assert set(schema["spec"]["properties"]) == {"databaseName"}
 
 
 async def test_propose_defaults_to_dry_run(server):

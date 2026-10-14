@@ -37,9 +37,9 @@ expect deny  noncompliant
 expect deny  registry-port-no-tag
 expect admit legacy-app
 # Agent limits (ADR-0013), on the platform's own API objects.
-expect admit agent-small-database
-expect deny  agent-large-database
+expect admit agent-small-webservice
+expect deny  agent-large-webservice
 expect deny  agent-many-replicas
-expect admit human-large-database
+expect admit human-large-webservice
 
 exit "$fail"

@@ -22,7 +22,7 @@ apiVersion: backstage.io/v1alpha1
 kind: Resource
 metadata:
   name: invoice-api-db
-  description: Postgres for invoice-api (Database API, size small).
+  description: Postgres for invoice-api (Database API).
 spec:
   type: database
   owner: group:billing

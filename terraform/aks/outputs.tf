@@ -47,6 +47,22 @@ output "platform_environment" {
       adminsGroupID    = var.sso_admins_group_object_id
       engineersGroupID = var.sso_engineers_group_object_id
     }
+    database = {
+      backend = "azure-flexible-server"
+      azure = {
+        resourceGroup       = azapi_resource.data_resource_group.name
+        location            = var.location
+        version             = var.postgres.version
+        skuName             = var.postgres.sku_name
+        storageMb           = var.postgres.storage_mb
+        backupRetentionDays = var.postgres.backup_retention_days
+        delegatedSubnetID   = azapi_resource.subnet_postgres.id
+        privateDNSZoneID    = azapi_resource.postgres_private_dns_zone.id
+        clientID            = azapi_resource.crossplane_azure_identity.output.properties.clientId
+        tenantID            = data.azapi_client_config.current.tenant_id
+        subscriptionID      = data.azapi_client_config.current.subscription_id
+      }
+    }
   }
 }
 

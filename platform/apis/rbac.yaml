@@ -34,3 +34,19 @@ rules:
   - apiGroups: [gateway.networking.k8s.io]
     resources: [httproutes]
     verbs: [get, list, watch, create, update, patch, delete]
+---
+# What the Database composition creates on Azure (ADR-0019), plus the
+# "<name>-app" Secret it assembles from the server's credentials.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: crossplane-compose-database-azure
+  labels:
+    rbac.crossplane.io/aggregate-to-crossplane: "true"
+rules:
+  - apiGroups: [dbforpostgresql.azure.m.upbound.io]
+    resources: [flexibleservers, flexibleserverdatabases]
+    verbs: [get, list, watch, create, update, patch, delete]
+  - apiGroups: [""]
+    resources: [secrets]
+    verbs: [get, list, watch, create, update, patch, delete]

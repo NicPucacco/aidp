@@ -20,7 +20,9 @@ spec:
       - apiGroups: [platform.fernhill.io]
         apiVersions: [v1alpha1]
         operations: [CREATE, UPDATE]
-        resources: [databases, webservices]
+        # Databases have no size to limit: teams (and agents) choose only a
+        # name, and the platform decides the rest (ADR-0019).
+        resources: [webservices]
   matchConditions:
     - name: requested-by-agent
       expression: >-

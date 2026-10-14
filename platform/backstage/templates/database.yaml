@@ -5,5 +5,4 @@ metadata:
   name: backstage
   namespace: backstage
 spec:
-  size: small
   databaseName: backstage

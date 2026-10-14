@@ -141,11 +141,11 @@ def propose_webservice(
     size: str = "small",
     replicas: int = 2,
     expose: bool = True,
-    database_size: str | None = None,
+    with_database: bool = False,
     database_name: str = "app",
 ) -> Proposal:
     p = Proposal(team=team, name=name, golden_path="new-webservice", reason=reason, agent=agent)
-    with_db = database_size is not None
+    with_db = with_database
     rendered = _render_dir(
         repo,
         "new-webservice/skeleton",
@@ -158,7 +158,7 @@ def propose_webservice(
         rendered |= _render_dir(
             repo,
             "new-webservice/skeleton-database",
-            dict(name=name, team=team, size=database_size, databaseName=database_name),
+            dict(name=name, team=team, databaseName=database_name),
         )
     base = f"tenants/{team}/{name}"
     p.files = {f"{base}/{fn}": (_annotate(c, agent) if fn != "catalog-info.yaml" else c) for fn, c in rendered.items()}
@@ -167,12 +167,12 @@ def propose_webservice(
 
 
 def propose_database(
-    repo: Repo, *, agent: str, team: str, name: str, reason: str, size: str = "small", database_name: str = "app"
+    repo: Repo, *, agent: str, team: str, name: str, reason: str, database_name: str = "app"
 ) -> Proposal:
+    # Teams (and agents) choose only the name; the platform decides where it
+    # runs, its size and its backups (ADR-0019).
     p = Proposal(team=team, name=name, golden_path="new-database", reason=reason, agent=agent)
-    rendered = _render_dir(
-        repo, "new-database/skeleton", dict(name=name, team=team, size=size, databaseName=database_name)
-    )
+    rendered = _render_dir(repo, "new-database/skeleton", dict(name=name, team=team, databaseName=database_name))
     base = f"tenants/{team}/{name}"
     p.files = {f"{base}/{fn}": (_annotate(c, agent) if fn != "catalog-info.yaml" else c) for fn, c in rendered.items()}
     _validate(repo, p)

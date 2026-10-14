@@ -1,5 +1,6 @@
 # The local (kind) EnvironmentConfig, as platform/apps/templates/environment.yaml
-# renders it with default values. Used by crossplane render in tests and CI.
+# renders it with default values. Used by crossplane render in tests and CI;
+# platform/apis/tests/test_environment.py keeps the two identical.
 apiVersion: apiextensions.crossplane.io/v1beta1
 kind: EnvironmentConfig
 metadata:
@@ -9,3 +10,12 @@ data:
   baseDomain: localhost
   urlPort: ":8000"
   scheme: http
+  database:
+    backend: cloudnative-pg
+    cloudnativePG:
+      cpu: 100m
+      image: ghcr.io/cloudnative-pg/postgresql:18.6
+      instances: 1
+      memory: 256Mi
+      memoryLimit: 512Mi
+      storage: 1Gi

@@ -14,12 +14,12 @@ spec:
   owner: group:platform
   system: fernhill-platform
   definition: |
-    # The Database API: what a Fernhill team asks for, in their terms.
+    # The Database API: a Postgres database, as a team asks for it.
     #
-    # Teams choose a t-shirt size, not instance counts or storage classes. What
-    # "small" means is the platform team's decision, encoded once in its composition,
-    # and can change (or map to RDS in a cloud composition) without touching any
-    # tenant's YAML. See ADR-0006.
+    # Teams choose only the database's name. Where it runs, how big it is, the
+    # Postgres version and the backup policy are the platform's decisions, made
+    # per environment (ADR-0019): CloudNativePG locally, Azure Database for
+    # PostgreSQL on AKS. Either way the team gets the same connection Secret.
     apiVersion: apiextensions.crossplane.io/v2
     kind: CompositeResourceDefinition
     metadata:
@@ -38,15 +38,18 @@ spec:
         plural: databases
         categories: [fernhill]
       defaultCompositionRef:
-        name: database-cnpg
+        name: database
       versions:
         - name: v1alpha1
           served: true
           referenceable: true
           additionalPrinterColumns:
-            - name: Size
+            - name: Database
               type: string
-              jsonPath: .spec.size
+              jsonPath: .spec.databaseName
+            - name: Backend
+              type: string
+              jsonPath: .status.backend
             - name: Secret
               type: string
               jsonPath: .status.connectionSecret
@@ -57,26 +60,9 @@ spec:
                 spec:
                   type: object
                   properties:
-                    engine:
-                      type: string
-                      description: Database engine. Postgres is the only paved-road engine.
-                      enum: [postgres]
-                      default: postgres
-                    version:
-                      type: string
-                      description: Major version.
-                      enum: ["16", "17", "18"]
-                      default: "18"
-                    size:
-                      type: string
-                      description: >-
-                        small: 1 instance, 1Gi. medium: 2 instances (HA), 10Gi.
-                        large: 3 instances (HA), 50Gi.
-                      enum: [small, medium, large]
-                      default: small
                     databaseName:
                       type: string
-                      description: Name of the database created inside the instance.
+                      description: Name of the database created inside the server.
                       pattern: "^[a-z][a-z0-9_]{0,62}$"
                       default: app
                 status:
@@ -86,11 +72,14 @@ spec:
                       type: string
                       description: >-
                         Secret in the same namespace with keys host, port, dbname,
-                        user, password, and uri.
+                        user, password, and uri. Same keys on every backend.
                     host:
                       type: string
                     port:
                       type: integer
+                    backend:
+                      type: string
+                      description: Where the database runs (cloudnative-pg or azure-flexible-server).
 ---
 apiVersion: backstage.io/v1alpha1
 kind: API
