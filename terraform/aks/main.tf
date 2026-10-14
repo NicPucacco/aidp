@@ -110,7 +110,7 @@ resource "azapi_resource" "log_analytics" {
 
 module "aks" {
   source  = "Azure/avm-res-containerservice-managedcluster/azurerm"
-  version = "0.8.3"
+  version = "0.8.4"
 
   name               = "aks-${local.suffix}"
   location           = var.location
