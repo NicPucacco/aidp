@@ -1,0 +1,14 @@
+apiVersion: platform.fernhill.io/v1alpha1
+kind: WebService
+metadata:
+  name: payment-reconciliation
+  annotations:
+    platform.fernhill.io/requested-by: agent:claude-code
+spec:
+  image: ghcr.io/stefanprodan/podinfo:6.15.0
+  port: 9898
+  healthPath: /readyz
+  size: small
+  replicas: 2
+  expose: false
+  database: payment-reconciliation
